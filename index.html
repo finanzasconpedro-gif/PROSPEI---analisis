@@ -225,6 +225,32 @@
       .card { padding: 1.125rem; }
       .familia-grid { grid-template-columns: 1fr; }
     }
+
+    .data-table-wrap { overflow-x: auto; margin-top: 1.25rem; }
+    .data-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .data-table th {
+      background: var(--p-bg); color: var(--p-muted);
+      font-weight: 500; font-size: 10px; letter-spacing: 0.07em;
+      text-transform: uppercase; padding: 7px 10px;
+      border: 1px solid var(--p-border); text-align: right;
+      white-space: nowrap;
+    }
+    .data-table th:first-child { text-align: left; }
+    .data-table td {
+      padding: 6px 10px; border: 1px solid var(--p-border);
+      text-align: right; white-space: nowrap; color: var(--p-ink);
+    }
+    .data-table td:first-child { text-align: left; font-weight: 500; color: var(--p-muted); }
+    .data-table tr:nth-child(even) td { background: var(--p-bg); }
+    .data-table .total-row td { background: var(--p-lilac); font-weight: 500; color: var(--p-violet); border-color: var(--p-lavender); }
+    .data-table .cat-viv  { color: #2A7F8F; font-weight:500; }
+    .data-table .cat-mant { color: #5B2ECC; font-weight:500; }
+    .data-table .cat-edu  { color: #D4516A; font-weight:500; }
+    .data-table .cat-ev   { color: #E8A23A; font-weight:500; }
+    .table-toggle { font-size:12px; color:var(--p-violet); background:none; border:none; cursor:pointer; margin-top:10px; text-decoration:underline; padding:0; font-family:'DM Sans',sans-serif; }
   </style>
 </head>
 <body>
@@ -289,7 +315,7 @@
 
   <!-- VIVIENDA -->
   <div class="section">
-    <div class="section-label"><div class="section-dot" style="background:var(--c-viv)"></div><span class="section-title">Vivienda</span></div>
+    <div class="section-label"><div class="section-dot" style="background:#2A7F8F"></div><span class="section-title">Vivienda</span></div>
     <div class="card">
       <div class="toggle-row"><input type="checkbox" id="chkVivienda" checked onchange="toggleSec('vivienda')" /><span class="toggle-label">Incluir en el análisis</span></div>
       <div id="sec-vivienda">
@@ -301,7 +327,7 @@
 
   <!-- MANTENIMIENTO -->
   <div class="section">
-    <div class="section-label"><div class="section-dot" style="background:var(--c-mant)"></div><span class="section-title">Gastos de mantenimiento</span></div>
+    <div class="section-label"><div class="section-dot" style="background:#5B2ECC"></div><span class="section-title">Gastos de mantenimiento</span></div>
     <div class="card">
       <div class="toggle-row"><input type="checkbox" id="chkMant" checked onchange="toggleSec('mant')" /><span class="toggle-label">Incluir en el análisis</span></div>
       <div id="sec-mant">
@@ -316,7 +342,7 @@
 
   <!-- EDUCACIÓN -->
   <div class="section">
-    <div class="section-label"><div class="section-dot" style="background:var(--c-edu)"></div><span class="section-title">Educación</span></div>
+    <div class="section-label"><div class="section-dot" style="background:#D4516A"></div><span class="section-title">Educación</span></div>
     <div class="card">
       <div class="toggle-row"><input type="checkbox" id="chkEdu" checked onchange="toggleSec('edu')" /><span class="toggle-label">Incluir en el análisis</span></div>
       <div id="sec-edu"><div id="edu-list"></div><button class="add-btn" onclick="addHijoEdu()">+ Agregar hijo/a</button></div>
@@ -325,7 +351,7 @@
 
   <!-- EVENTOS -->
   <div class="section">
-    <div class="section-label"><div class="section-dot" style="background:var(--c-ev)"></div><span class="section-title">Eventos especiales</span></div>
+    <div class="section-label"><div class="section-dot" style="background:#E8A23A"></div><span class="section-title">Eventos especiales</span></div>
     <div class="card">
       <div class="toggle-row"><input type="checkbox" id="chkEv" checked onchange="toggleSec('ev')" /><span class="toggle-label">Incluir en el análisis</span></div>
       <div id="sec-ev"><div id="ev-list"></div><button class="add-btn" onclick="addEvento()">+ Agregar evento</button></div>
@@ -346,6 +372,10 @@
           <div class="chart-heading">Gastos por año — flujo anual de necesidades</div>
           <div class="chart-wrap" style="height:280px"><canvas id="chartAnnual" role="img" aria-label="Gastos anuales por categoría sin vivienda"></canvas></div>
           <p class="chart-note">Detalle de los gastos anuales por categoría. La vivienda no aparece aquí por ser un capital fijo, no un flujo anual.</p>
+          <button class="table-toggle" onclick="toggleTable('tbl-annual')">Ver tabla de datos</button>
+          <div id="tbl-annual" class="data-table-wrap hidden">
+            <table class="data-table" id="tabla-annual"></table>
+          </div>
         </div>
 
         <hr class="sep">
@@ -354,6 +384,10 @@
           <div class="chart-heading">Necesidades acumuladas — capital requerido por año de inicio</div>
           <div class="chart-wrap" style="height:320px"><canvas id="chartNec" role="img" aria-label="Necesidades acumuladas de cobertura por año, decreciente"></canvas></div>
           <p class="chart-note">Cada barra muestra el capital que necesitaría el seguro si el evento ocurriese ese año: vivienda (base fija) + suma de todos los gastos futuros desde ese año en adelante.</p>
+          <button class="table-toggle" onclick="toggleTable('tbl-nec')">Ver tabla de datos</button>
+          <div id="tbl-nec" class="data-table-wrap hidden">
+            <table class="data-table" id="tabla-nec"></table>
+          </div>
         </div>
       </div>
     </div>
@@ -366,7 +400,7 @@
 </footer>
 
 <script>
-  const COLORS={ vivienda:'#3B6FD4', mantenimiento:'#5B2ECC', educacion:'#7B8FE0', eventos:'#A8B8F0' };
+  const COLORS={ vivienda:'#2A7F8F', mantenimiento:'#5B2ECC', educacion:'#D4516A', eventos:'#E8A23A' };
   const ETAPAS={
     jardin:     {label:'Jardín (3–5)',       costo:400, duracion:3,edadInicio:3},
     primaria:   {label:'Primaria (6–11)',    costo:500, duracion:6,edadInicio:6},
@@ -510,10 +544,10 @@
 
     document.getElementById('summary-grid').innerHTML=[
       {label:'Capital necesario (año 1)',val:fmtFull(vivMonto+necMant[0]+necEdu[0]+necEv[0]),sub:'máxima cobertura',hi:true},
-      {label:'Vivienda',     val:fmt(vivMonto),color:COLORS.vivienda},
-      {label:'Mantenimiento',val:fmt(totMant), color:COLORS.mantenimiento},
-      {label:'Educación',    val:fmt(totEdu),  color:COLORS.educacion},
-      {label:'Eventos',      val:fmt(totEv),   color:COLORS.eventos},
+      {label:'Vivienda',     val:fmt(vivMonto),color:'#2A7F8F'},
+      {label:'Mantenimiento',val:fmt(totMant), color:'#5B2ECC'},
+      {label:'Educación',    val:fmt(totEdu),  color:'#D4516A'},
+      {label:'Eventos',      val:fmt(totEv),   color:'#E8A23A'},
     ].map(m=>`
       <div class="metric ${m.hi?'metric-highlight':''}">
         <div class="metric-label" ${m.color?`style="color:${m.color}"`:''}>${m.label}</div>
@@ -521,10 +555,10 @@
       </div>`).join('');
 
     document.getElementById('legend').innerHTML=[
-      {label:'Vivienda (base fija)',color:COLORS.vivienda},
-      {label:'Mantenimiento',      color:COLORS.mantenimiento},
-      {label:'Educación',          color:COLORS.educacion},
-      {label:'Eventos especiales', color:COLORS.eventos},
+      {label:'Vivienda (base fija)',color:'#2A7F8F'},
+      {label:'Mantenimiento',      color:'#5B2ECC'},
+      {label:'Educación',          color:'#D4516A'},
+      {label:'Eventos especiales', color:'#E8A23A'},
     ].map(l=>`<span class="legend-item"><span class="legend-sq" style="background:${l.color}"></span>${l.label}</span>`).join('');
 
     Object.values(charts).forEach(ch=>ch.destroy()); charts={};
@@ -558,10 +592,85 @@
           y:{stacked:true,ticks:{callback:v=>fmt(v),font:{size:11}},title:{display:true,text:'Capital necesario',font:{size:11},color:'#5A5A7A'}}}}
     });
 
+    buildTables(yearLabels, dMant, dEdu, dEv, vivMonto, necMant, necEdu, necEv, horizon);
     document.getElementById('results').classList.remove('hidden');
     document.getElementById('results').scrollIntoView({behavior:'smooth'});
   }
 
+
+  function toggleTable(id) {
+    const el = document.getElementById(id);
+    const btn = el.previousElementSibling;
+    if (el.classList.contains('hidden')) {
+      el.classList.remove('hidden');
+      btn.textContent = 'Ocultar tabla de datos';
+    } else {
+      el.classList.add('hidden');
+      btn.textContent = 'Ver tabla de datos';
+    }
+  }
+
+  function buildTables(yearLabels, dMant, dEdu, dEv, vivMonto, necMant, necEdu, necEv, horizon) {
+    const sym = document.getElementById('currency').value === 'EUR' ? '€' : '$';
+    function n(v) { return v > 0 ? sym + Math.round(v).toLocaleString('es-AR') : '-'; }
+
+    // TABLE 1: Año por año — filas=categorías, columnas=años
+    const t1 = document.getElementById('tabla-annual');
+    let h1 = '<thead><tr><th>Concepto</th>';
+    for (let i=0; i<horizon; i++) h1 += '<th>Año '+(i+1)+'</th>';
+    h1 += '<th>Total</th></tr></thead><tbody>';
+
+    const rows1 = [
+      { label: 'Mantenimiento', cls: 'cat-mant', data: dMant },
+      { label: 'Educación',     cls: 'cat-edu',  data: dEdu  },
+      { label: 'Eventos',       cls: 'cat-ev',   data: dEv   },
+    ];
+    const totAnual = new Array(horizon).fill(0);
+    rows1.forEach(row => {
+      let rowTotal = 0;
+      h1 += '<tr><td class="'+row.cls+'">'+row.label+'</td>';
+      for (let i=0; i<horizon; i++) {
+        h1 += '<td>'+n(row.data[i])+'</td>';
+        totAnual[i] += row.data[i];
+        rowTotal += row.data[i];
+      }
+      h1 += '<td><strong>'+n(rowTotal)+'</strong></td></tr>';
+    });
+    // Total row
+    h1 += '<tr class="total-row"><td>Total anual</td>';
+    let gran1 = 0;
+    for (let i=0; i<horizon; i++) { h1 += '<td>'+n(totAnual[i])+'</td>'; gran1 += totAnual[i]; }
+    h1 += '<td>'+n(gran1)+'</td></tr>';
+    h1 += '</tbody>';
+    t1.innerHTML = h1;
+
+    // TABLE 2: Acumulada — filas=categorías, columnas=años
+    const t2 = document.getElementById('tabla-nec');
+    let h2 = '<thead><tr><th>Concepto</th>';
+    for (let i=0; i<horizon; i++) h2 += '<th>Año '+(i+1)+'</th>';
+    h2 += '</tr></thead><tbody>';
+
+    const rows2 = [
+      { label: 'Vivienda (base fija)', cls: 'cat-viv',  data: new Array(horizon).fill(vivMonto) },
+      { label: 'Mantenimiento',        cls: 'cat-mant', data: necMant },
+      { label: 'Educación',            cls: 'cat-edu',  data: necEdu  },
+      { label: 'Eventos',              cls: 'cat-ev',   data: necEv   },
+    ];
+    const totNec = new Array(horizon).fill(0);
+    rows2.forEach(row => {
+      h2 += '<tr><td class="'+row.cls+'">'+row.label+'</td>';
+      for (let i=0; i<horizon; i++) {
+        h2 += '<td>'+n(row.data[i])+'</td>';
+        totNec[i] += row.data[i];
+      }
+      h2 += '</tr>';
+    });
+    // Capital total row
+    h2 += '<tr class="total-row"><td>Capital total</td>';
+    for (let i=0; i<horizon; i++) h2 += '<td>'+n(totNec[i])+'</td>';
+    h2 += '</tr></tbody>';
+    t2.innerHTML = h2;
+  }
   addHijoEdu(); addEvento();
 
 </script>
