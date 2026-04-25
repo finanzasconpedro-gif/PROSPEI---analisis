@@ -218,6 +218,28 @@
       background: var(--p-white);
     }
 
+
+    .pdf-btn {
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      padding: 11px 28px; border-radius: var(--radius-md);
+      border: 1.5px solid var(--p-violet); background: transparent;
+      color: var(--p-violet); cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      margin: 1.5rem auto 0; transition: all 0.15s;
+    }
+    .pdf-btn:hover { background: var(--p-lilac); }
+    .pdf-btn svg { width:16px; height:16px; }
+    @media print {
+      .site-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .accent-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .calc-btn, .pdf-btn, .add-btn, .remove-btn, .table-toggle, .toggle-row { display: none !important; }
+      .card { box-shadow: none; border: 1px solid #ddd; }
+      .data-table-wrap { display: block !important; }
+      .hidden { display: block !important; }
+      body { background: white; }
+      .main { padding: 1rem; }
+      @page { margin: 1.5cm; size: A4 landscape; }
+    }
     @media (max-width: 520px) {
       .header-inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
       .header-divider { display: none; }
@@ -345,7 +367,7 @@
     <div class="section-label"><div class="section-dot" style="background:#D4516A"></div><span class="section-title">Educación</span></div>
     <div class="card">
       <div class="toggle-row"><input type="checkbox" id="chkEdu" checked onchange="toggleSec('edu')" /><span class="toggle-label">Incluir en el análisis</span></div>
-      <div id="sec-edu"><div id="edu-list"></div><button class="add-btn" onclick="addHijoEdu()">+ Agregar hijo/a</button></div>
+      <div id="sec-edu"><div id="edu-list"></div></div>
     </div>
   </div>
 
@@ -391,6 +413,17 @@
         </div>
       </div>
     </div>
+
+    <button class="pdf-btn" onclick="exportPDF()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="12" y1="18" x2="12" y2="12"/>
+        <line x1="9" y1="15" x2="15" y2="15"/>
+      </svg>
+      Exportar PDF
+    </button>
+
   </div>
 
 </main>
@@ -408,6 +441,17 @@
     universidad:{label:'Universidad (18–22)',costo:1500,duracion:5,edadInicio:18}
   };
   let hijoFamCount=0,hijoEduCount=0,evCount=0,charts={};
+
+  function exportPDF() {
+    document.querySelectorAll('.data-table-wrap').forEach(function(el){ el.classList.remove('hidden'); });
+    document.querySelectorAll('.table-toggle').forEach(function(el){ el.style.display='none'; });
+    setTimeout(function(){
+      window.print();
+      setTimeout(function(){
+        document.querySelectorAll('.table-toggle').forEach(function(el){ el.style.display=''; });
+      }, 1500);
+    }, 400);
+  }
 
   function updateAvatar(pre){
     const n=document.getElementById(pre+'Nombre').value.trim();
@@ -439,35 +483,78 @@
         <button class="remove-btn" onclick="removeEl('${id}')">quitar</button>
       </div>
       <div class="persona-avatar" style="background:${bgs[ci]};color:${tcs[ci]}" id="${pre}-avatar">?</div>
-      <div class="field" style="margin-bottom:10px"><label>Nombre</label><input type="text" id="${pre}Nombre" placeholder="Nombre" oninput="updateAvatar('${pre}')" /></div>
+      <div class="field" style="margin-bottom:10px"><label>Nombre</label><input type="text" id="${pre}Nombre" placeholder="Nombre" oninput="updateAvatar('${pre}');syncEducacion()" /></div>
       <div class="row">
         <div class="field"><label>Fecha de nac.</label><input type="date" id="${pre}Fecha" onchange="calcEdad('${pre}')" /></div>
-        <div class="field"><label>Edad</label><input type="number" id="${pre}Edad" placeholder="años" min="0" max="30" oninput="syncFecha('${pre}')" /></div>
+        <div class="field"><label>Edad</label><input type="number" id="${pre}Edad" placeholder="años" min="0" max="30" oninput="syncFecha('${pre}');syncEducacion()" /></div>
       </div>`;
     document.getElementById('hijos-grid').appendChild(div);
+  setTimeout(syncEducacion, 50);
   }
 
-  function addHijoEdu(){
-    hijoEduCount++;
-    const id='eduhijo-'+hijoEduCount;
-    const div=document.createElement('div'); div.className='card-inner'; div.id=id; div.style.marginBottom='8px';
-    div.innerHTML=`
-      <div class="row" style="align-items:center;margin-bottom:10px">
-        <span style="font-size:14px;font-weight:500;flex:1">Hijo/a ${hijoEduCount}</span>
-        <button class="remove-btn" onclick="removeEl('${id}')">quitar</button>
-      </div>
-      <div class="row" style="margin-bottom:12px">
-        <div class="field"><label>Edad actual</label><input type="number" class="edu-edad" value="5" min="0" max="22" /></div>
-      </div>
-      <div style="font-size:11px;color:#5A5A7A;margin-bottom:8px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em">Etapas a cubrir</div>
-      ${Object.entries(ETAPAS).map(([k,e])=>`
-        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:nowrap">
-          <input type="checkbox" class="etapa-chk" data-etapa="${k}" checked style="flex-shrink:0;width:15px;height:15px;accent-color:#5B2ECC"/>
-          <span style="font-size:13px;color:#5A5A7A;min-width:160px">${e.label}</span>
-          <div class="field" style="min-width:90px;flex:1"><label>Costo mensual</label><input type="number" class="etapa-costo" data-etapa="${k}" value="${e.costo}"/></div>
-        </div>`).join('')}`;
-    document.getElementById('edu-list').appendChild(div);
+  function syncEducacion() {
+    const list = document.getElementById('edu-list');
+    const hijos = [];
+    document.querySelectorAll('[id^="hijofam-"]').forEach(el => {
+      const num = el.id.split('-')[1];
+      const pre = 'hf' + num;
+      const nombreEl = document.getElementById(pre+'Nombre');
+      const edadEl   = document.getElementById(pre+'Edad');
+      const nombre = nombreEl ? nombreEl.value.trim() : '';
+      const edad   = edadEl   ? parseInt(edadEl.value)||0 : 0;
+      hijos.push({ nombre: nombre||('Hijo/a '+num), edad, famId: el.id, num });
+    });
+
+    // Preserve existing cuota/dur/chk values
+    const existing = {};
+    list.querySelectorAll('[id^="eduhijo-"]').forEach(el => {
+      const fid = el.dataset.famid;
+      if (!fid) return;
+      const costs={}, durs={}, chks={};
+      el.querySelectorAll('.etapa-costo').forEach(i => costs[i.dataset.etapa]=i.value);
+      el.querySelectorAll('.etapa-dur').forEach(i =>   durs[i.dataset.etapa]=i.value);
+      el.querySelectorAll('.etapa-chk').forEach(i =>   chks[i.dataset.etapa]=i.checked);
+      existing[fid] = {costs,durs,chks};
+    });
+
+    list.innerHTML = '';
+
+    if (hijos.length === 0) {
+      list.innerHTML = '<p style="font-size:13px;color:var(--p-muted);padding:0.5rem 0">Agregá hijos en la sección Familia para configurar su educación.</p>';
+      return;
+    }
+
+    hijos.forEach((hijo, idx) => {
+      const id = 'eduhijo-'+(idx+1);
+      const prev = existing[hijo.famId]||{};
+      const div = document.createElement('div');
+      div.className='card-inner'; div.id=id; div.dataset.famid=hijo.famId; div.style.marginBottom='8px';
+      const ini = hijo.nombre.trim()[0]||'?';
+      let etapasHtml = Object.entries(ETAPAS).map(([k,e]) => {
+        const costo = (prev.costs&&prev.costs[k]) ? prev.costs[k] : e.costo;
+        const dur   = (prev.durs &&prev.durs[k])  ? prev.durs[k]  : e.duracion;
+        const chkd  = (prev.chks &&prev.chks[k]!==undefined) ? prev.chks[k] : true;
+        return `<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap">
+          <input type="checkbox" class="etapa-chk" data-etapa="${k}" ${chkd?'checked':''} style="flex-shrink:0;width:15px;height:15px;accent-color:#5B2ECC"/>
+          <span style="font-size:13px;color:#5A5A7A;min-width:110px">${e.label.split(' ')[0]}</span>
+          <div class="field" style="min-width:70px;max-width:90px"><label>Años</label><input type="number" class="etapa-dur" data-etapa="${k}" value="${dur}" min="1" max="10"/></div>
+          <div class="field" style="min-width:90px;flex:1"><label>Cuota mensual</label><input type="number" class="etapa-costo" data-etapa="${k}" value="${costo}"/></div>
+        </div>`;
+      }).join('');
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:30px;height:30px;border-radius:50%;background:var(--p-lilac);color:var(--p-violet);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">${ini.toUpperCase()}</div>
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--p-ink)">${hijo.nombre}</div>
+            <div style="font-size:12px;color:var(--p-muted)">${hijo.edad} años · cuota × 11 meses × años de cada etapa</div>
+          </div>
+        </div>
+        ${etapasHtml}`;
+      list.appendChild(div);
+    });
   }
+
+  function addHijoEdu() { syncEducacion(); }
 
   function addEvento(){
     evCount++;
@@ -486,7 +573,7 @@
     document.getElementById('ev-list').appendChild(div);
   }
 
-  function removeEl(id){const el=document.getElementById(id);if(el)el.remove();}
+  function removeEl(id){const el=document.getElementById(id);if(el){el.remove();setTimeout(syncEducacion,50);}}
   function toggleSec(id){
     const map={vivienda:'chkVivienda',mant:'chkMant',edu:'chkEdu',ev:'chkEv'};
     const el=document.getElementById('sec-'+id),chk=document.getElementById(map[id]);
@@ -516,11 +603,13 @@
       document.querySelectorAll('[id^="eduhijo-"]').forEach(el=>{
         const edad=parseInt(el.querySelector('.edu-edad').value)||0;
         const chks=el.querySelectorAll('.etapa-chk'),costos=el.querySelectorAll('.etapa-costo');
+        const durs=el.querySelectorAll('.etapa-dur');
         chks.forEach((chk,idx)=>{
           if(!chk.checked)return;
-          const e=ETAPAS[chk.dataset.etapa],ca=parseFloat(costos[idx].value)*12||e.costo*12;
+          const e=ETAPAS[chk.dataset.etapa],ca=parseFloat(costos[idx].value)*11||e.costo*11;
+          const duracion=parseInt(durs[idx].value)||e.duracion;
           const dif=Math.max(0,e.edadInicio-edad);
-          for(let d=0;d<e.duracion;d++){const yr=dif+d;if(yr<horizon)dEdu[yr]+=ca;}
+          for(let d=0;d<duracion;d++){const yr=dif+d;if(yr<horizon)dEdu[yr]+=ca;}
         });
       });
     }
@@ -671,7 +760,7 @@
     h2 += '</tr></tbody>';
     t2.innerHTML = h2;
   }
-  addHijoEdu(); addEvento();
+  syncEducacion(); addEvento();
 
 </script>
 </body>
