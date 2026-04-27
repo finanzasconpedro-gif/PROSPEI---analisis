@@ -671,17 +671,240 @@ function togTbl(id, btn) {
 }
 
 function exportPDF() {
-  // Show all tables
-  document.querySelectorAll('.tbl-wrap').forEach(function(el){ el.classList.remove('hidden'); });
-  document.querySelectorAll('.tbl-toggle').forEach(function(b){ b.style.visibility='hidden'; });
-  // Make sure plan section is visible if calculated
-  if (gCalc) { document.getElementById('sec-plan').classList.remove('hidden'); }
-  setTimeout(function(){
-    window.print();
-    setTimeout(function(){
-      document.querySelectorAll('.tbl-toggle').forEach(function(b){ b.style.visibility=''; });
-    }, 2000);
-  }, 600);
+  if (!gCalc) { alert('Primero calculá el análisis de necesidades.'); return; }
+
+  // Capture chart images
+  var imgAnual = document.getElementById('chartAnual') ? document.getElementById('chartAnual').toDataURL('image/png') : '';
+  var imgNeto  = document.getElementById('chartNeto')  ? document.getElementById('chartNeto').toDataURL('image/png')  : '';
+  var imgNec   = document.getElementById('chartNec')   ? document.getElementById('chartNec').toDataURL('image/png')   : '';
+  var imgPlan  = document.getElementById('chartPlan')  ? document.getElementById('chartPlan').toDataURL('image/png')  : '';
+
+  // Collect family data
+  var titNombre = document.getElementById('titNombre').value || '-';
+  var titEdad   = document.getElementById('titEdad').value || '-';
+  var parNombre = document.getElementById('parNombre').value || '';
+  var parEdad   = document.getElementById('parEdad').value || '';
+
+  var hijosHTML = '';
+  document.querySelectorAll('[id^="hijofam-"]').forEach(function(el) {
+    var num = el.id.split('-')[1];
+    var n = document.getElementById('hf'+num+'Nombre') ? document.getElementById('hf'+num+'Nombre').value : '';
+    var e = document.getElementById('hf'+num+'Edad')   ? document.getElementById('hf'+num+'Edad').value   : '';
+    if (n) hijosHTML += '<td><strong>'+n+'</strong><br><span>'+e+' años</span></td>';
+  });
+
+  // Collect needs data
+  var vivienda  = document.getElementById('chkViv').checked  ? fmtF(parseFloat(document.getElementById('propVal').value)||0) : '-';
+  var mantMens  = document.getElementById('chkMant').checked ? fmtF((parseFloat(document.getElementById('mantMens').value)||0)) : '-';
+  var mantAnios = document.getElementById('mantAnios').value;
+  var ingCon    = fmtF((parseFloat(document.getElementById('ingConyuge').value)||0));
+  var ingOtros  = fmtF((parseFloat(document.getElementById('ingOtros').value)||0));
+
+  // Collect educacion
+  var eduHTML = '';
+  document.querySelectorAll('[id^="eduhijo-"]').forEach(function(ed) {
+    var famId = ed.dataset.famid;
+    var num = famId ? famId.split('-')[1] : '';
+    var nombre = (document.getElementById('hf'+num+'Nombre') ? document.getElementById('hf'+num+'Nombre').value : '') || 'Hijo/a';
+    eduHTML += '<tr><td colspan="4" style="background:#f4f5fc;font-weight:600;padding:4px 8px">'+nombre+'</td></tr>';
+    var rows = ed.querySelectorAll('.etapa-row');
+    rows.forEach(function(row) {
+      var chk   = row.querySelector('.etapa-chk');
+      var label = row.querySelector('.etapa-label');
+      var dur   = row.querySelector('.etapa-dur');
+      var costo = row.querySelector('.etapa-costo');
+      if (chk && chk.checked) {
+        eduHTML += '<tr><td style="padding-left:16px">'+(label?label.value:'')+'</td><td>'+(dur?dur.value+' años':'')+'</td><td>'+(costo?fmtF(parseFloat(costo.value)||0)+'/mes':'')+'</td><td>'+fmtF((parseFloat(costo?costo.value:0)||0)*11*(parseInt(dur?dur.value:0)||0))+'</td></tr>';
+      }
+    });
+  });
+
+  // Collect eventos
+  var evHTML = '';
+  document.querySelectorAll('[id^="evento-"]').forEach(function(ev) {
+    var desc  = ev.querySelector('.ev-desc')  ? ev.querySelector('.ev-desc').value  : '';
+    var monto = ev.querySelector('.ev-monto') ? ev.querySelector('.ev-monto').value : '';
+    var anio  = ev.querySelector('.ev-anio')  ? ev.querySelector('.ev-anio').value  : '';
+    if (monto) evHTML += '<tr><td>'+desc+'</td><td>'+fmtF(parseFloat(monto)||0)+'</td><td>Año '+anio+'</td></tr>';
+  });
+
+  // Plan data
+  var cobVida    = document.getElementById('cobVida')    ? fmtF(parseFloat(document.getElementById('cobVida').value)||0)    : '-';
+  var rentaCuota = document.getElementById('rentaCuota') ? fmtF(parseFloat(document.getElementById('rentaCuota').value)||0) : '-';
+  var rentaAnios = document.getElementById('rentaAnios') ? document.getElementById('rentaAnios').value : '-';
+  var sumPlanHTML = document.getElementById('sum-plan') ? document.getElementById('sum-plan').innerHTML : '';
+
+  // Get logo
+  var logoSrc = document.querySelector('.header-logo') ? document.querySelector('.header-logo').src : '';
+
+  var win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8"/>
+<title>Análisis de necesidades — Prospei</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  @page{size:A4 portrait;margin:1.2cm 1.4cm;}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#1A1A2E;background:white;}
+  .page{width:100%;page-break-after:always;padding-bottom:0.5cm;}
+  .page:last-child{page-break-after:avoid;}
+
+  /* HEADER */
+  .hdr{display:flex;align-items:center;gap:1.2rem;padding-bottom:0.5rem;border-bottom:3px solid #5B2ECC;margin-bottom:0.6rem;}
+  .hdr img{height:44px;width:auto;}
+  .hdr-div{width:1px;height:36px;background:#D0D4EE;}
+  .hdr-t{font-size:16px;font-weight:700;color:#1A1A2E;line-height:1.2;}
+  .hdr-s{font-size:9px;color:#5A5A7A;margin-top:2px;}
+
+  /* SECTION TITLE */
+  .stitle{font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#5A5A7A;margin:0.5rem 0 0.25rem;display:flex;align-items:center;gap:6px;}
+  .stitle::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#5B2ECC;flex-shrink:0;}
+
+  /* DATA GRID */
+  .dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:0.4rem;}
+  .dbox{background:#F4F5FC;border-radius:6px;padding:5px 7px;}
+  .dbox-label{font-size:8px;color:#5A5A7A;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;}
+  .dbox-val{font-size:11px;font-weight:600;color:#1A1A2E;}
+
+  /* TABLES */
+  table{width:100%;border-collapse:collapse;margin-bottom:0.4rem;}
+  th{background:#F4F5FC;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:4px 6px;border:0.5px solid #D0D4EE;text-align:left;color:#5A5A7A;}
+  td{font-size:9px;padding:3px 6px;border:0.5px solid #D0D4EE;color:#1A1A2E;}
+  tr:nth-child(even) td{background:#FAFAFA;}
+  .tot td{background:#D8DFFB!important;font-weight:700;color:#5B2ECC;}
+
+  /* CHARTS */
+  .chart-box{margin-bottom:0.5rem;}
+  .chart-box img{width:100%;height:auto;display:block;}
+  .chart-title{font-size:10px;font-weight:700;color:#1A1A2E;margin-bottom:4px;}
+  .chart-note{font-size:8px;color:#5A5A7A;margin-top:3px;line-height:1.4;}
+
+  .sep{border:none;border-top:0.5px solid #D0D4EE;margin:0.4rem 0;}
+
+  /* METRICS */
+  .mgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:0.5rem;}
+  .mbox{background:#F4F5FC;border-radius:6px;padding:5px 7px;}
+  .mbox-hi{background:#D8DFFB;}
+  .mbox-label{font-size:7px;color:#5A5A7A;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;}
+  .mbox-val{font-size:12px;font-weight:700;color:#1A1A2E;}
+  .mbox-hi .mbox-val{color:#5B2ECC;}
+  .mbox-sub{font-size:7px;color:#5A5A7A;margin-top:1px;}
+
+  /* FOOTER */
+  .footer{text-align:center;font-size:8px;color:#999;margin-top:0.5cm;border-top:0.5px solid #eee;padding-top:4px;}
+</style>
+</head><body>
+
+<!-- ═══════════════ HOJA 1: DATOS ═══════════════ -->
+<div class="page">
+  <div class="hdr">
+    <img src="${logoSrc}" alt="Prospei"/>
+    <div class="hdr-div"></div>
+    <div><div class="hdr-t">Análisis de necesidades y plan de acción</div><div class="hdr-s">Prospei Consultores Financieros</div></div>
+  </div>
+
+  <div class="stitle">Familia</div>
+  <div class="dgrid">
+    <div class="dbox"><div class="dbox-label">Titular</div><div class="dbox-val">${titNombre}</div><div class="dbox-label" style="margin-top:3px">${titEdad} años</div></div>
+    ${parNombre ? '<div class="dbox"><div class="dbox-label">Pareja</div><div class="dbox-val">'+parNombre+'</div><div class="dbox-label" style="margin-top:3px">'+parEdad+' años</div></div>' : ''}
+    ${hijosHTML}
+  </div>
+
+  <div class="stitle">Datos del análisis</div>
+  <div class="dgrid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="dbox"><div class="dbox-label">Moneda</div><div class="dbox-val">${document.getElementById('currency').value}</div></div>
+    <div class="dbox"><div class="dbox-label">Horizonte</div><div class="dbox-val">${document.getElementById('horizon').value} años</div></div>
+  </div>
+
+  <div class="stitle">Vivienda</div>
+  <div class="dgrid" style="grid-template-columns:1fr">
+    <div class="dbox"><div class="dbox-label">Valor de la propiedad (capital fijo)</div><div class="dbox-val">${vivienda}</div></div>
+  </div>
+
+  <div class="stitle">Gastos de mantenimiento</div>
+  <div class="dgrid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="dbox"><div class="dbox-label">Gasto mensual</div><div class="dbox-val">${mantMens}</div></div>
+    <div class="dbox"><div class="dbox-label">Años de cobertura</div><div class="dbox-val">${mantAnios} años</div></div>
+  </div>
+
+  <div class="stitle">Educación</div>
+  <table>
+    <thead><tr><th>Hijo/a y etapa</th><th>Años que quedan</th><th>Cuota mensual</th><th>Total estimado</th></tr></thead>
+    <tbody>${eduHTML}</tbody>
+  </table>
+
+  <div class="stitle">Eventos especiales</div>
+  ${evHTML ? '<table><thead><tr><th>Descripción</th><th>Monto</th><th>Año</th></tr></thead><tbody>'+evHTML+'</tbody></table>' : '<p style="font-size:9px;color:#999;margin-bottom:0.4rem">Sin eventos cargados</p>'}
+
+  <div class="stitle">Ingresos disponibles</div>
+  <div class="dgrid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="dbox"><div class="dbox-label">Ingreso mensual cónyuge</div><div class="dbox-val">${ingCon}</div></div>
+    <div class="dbox"><div class="dbox-label">Otros ingresos mensuales</div><div class="dbox-val">${ingOtros}</div></div>
+  </div>
+
+  <div class="footer">Prospei Consultores Financieros · Análisis de necesidades y plan de acción</div>
+</div>
+
+<!-- ═══════════════ HOJA 2: GRÁFICOS ANÁLISIS ═══════════════ -->
+<div class="page">
+  <div class="hdr">
+    <img src="${logoSrc}" alt="Prospei"/>
+    <div class="hdr-div"></div>
+    <div><div class="hdr-t">Análisis de necesidades — gráficos</div><div class="hdr-s">Prospei Consultores Financieros</div></div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">Gastos por año — flujo anual de necesidades</div>
+    <img src="${imgAnual}" alt="Gastos anuales"/>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="chart-box">
+    <div class="chart-title">Necesidades netas por año — después de descontar ingresos del cónyuge</div>
+    <img src="${imgNeto}" alt="Necesidades netas"/>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="chart-box">
+    <div class="chart-title">Necesidades acumuladas — capital requerido por año de inicio</div>
+    <img src="${imgNec}" alt="Necesidades acumuladas"/>
+    <div class="chart-note">Cada barra muestra el capital necesario si el evento ocurriese ese año: vivienda (base fija) + suma de gastos futuros desde ese año en adelante. La línea punteada muestra la necesidad neta descontando ingresos.</div>
+  </div>
+
+  <div class="footer">Prospei Consultores Financieros · Análisis de necesidades y plan de acción</div>
+</div>
+
+<!-- ═══════════════ HOJA 3: PLAN DE PROTECCIÓN ═══════════════ -->
+<div class="page">
+  <div class="hdr">
+    <img src="${logoSrc}" alt="Prospei"/>
+    <div class="hdr-div"></div>
+    <div><div class="hdr-t">Plan de protección</div><div class="hdr-s">Prospei Consultores Financieros</div></div>
+  </div>
+
+  <div class="stitle">Cobertura propuesta</div>
+  <div class="dgrid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="dbox"><div class="dbox-label">Cobertura Vida Entera</div><div class="dbox-val">${cobVida}</div></div>
+    <div class="dbox"><div class="dbox-label">Renta Familiar — cuota anual</div><div class="dbox-val">${rentaCuota}</div></div>
+    <div class="dbox"><div class="dbox-label">Renta Familiar — años</div><div class="dbox-val">${rentaAnios} años</div></div>
+  </div>
+
+  <div class="stitle">Resumen del plan</div>
+  <div class="mgrid">${sumPlanHTML}</div>
+
+  <div class="chart-box">
+    <div class="chart-title">Necesidades vs. cobertura acumulada</div>
+    <img src="${imgPlan}" alt="Plan de protección"/>
+    <div class="chart-note">Rojo: necesidades acumuladas totales. Verde apilado: Vida Entera (base) + Renta Familiar + Ingresos del cónyuge. La línea punteada es la necesidad neta real. Cuando las barras verdes igualan o superan las rojas, el plan cubre todas las necesidades.</div>
+  </div>
+
+  <div class="footer">Prospei Consultores Financieros · Análisis de necesidades y plan de acción</div>
+</div>
+
+</body></html>`);
+  win.document.close();
+  setTimeout(function(){ win.print(); }, 800);
 }
 
 // --- CALCULAR ---
