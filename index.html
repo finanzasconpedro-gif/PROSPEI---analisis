@@ -233,7 +233,24 @@
     </div>
   </div>
 
+  <!-- INGRESOS CÓNYUGE -->
+  <div class="section">
+    <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">Ingresos disponibles</span></div>
+    <div class="card">
+      <div class="toggle-row"><input type="checkbox" id="chkIng" checked /><span class="toggle-label">Incluir en el análisis</span></div>
+      <div id="sec-ing">
+        <div class="row">
+          <div class="field"><label>Ingreso mensual cónyuge</label><input type="number" id="ingConyuge" value="0" placeholder="0"/></div>
+          <div class="field"><label>Otros ingresos mensuales</label><input type="number" id="ingOtros" value="0" placeholder="0"/></div>
+        </div>
+        <p class="note" style="margin-top:8px">Se descuenta mes a mes de las necesidades durante los años de mantenimiento. La necesidad neta = necesidades − ingresos disponibles.</p>
+      </div>
+    </div>
+  </div>
+
   <button class="calc-btn" onclick="calcular()">Ver análisis de necesidades</button>
+
+
 
   <!-- RESULTADOS -->
   <div id="results" class="hidden">
@@ -252,7 +269,16 @@
 
         <hr class="sep">
 
-        <!-- Gráfico 2 -->
+        <!-- Gráfico 2: Necesidades netas por año -->
+        <div class="chart-heading">Necesidades netas por año — después de descontar ingresos del cónyuge</div>
+        <div class="chart-wrap" style="height:280px"><canvas id="chartNeto"></canvas></div>
+        <p class="chart-note">Lo que el seguro de vida debe cubrir cada año, una vez descontados los ingresos disponibles del cónyuge. Estas son las necesidades reales de cobertura año a año.</p>
+        <button class="tbl-toggle" onclick="togTbl('tw-neto',this)">Ver tabla de datos</button>
+        <div id="tw-neto" class="tbl-wrap hidden"><table class="data-table" id="t-neto"></table></div>
+
+        <hr class="sep">
+
+        <!-- Gráfico 3 -->
         <div class="chart-heading">Necesidades acumuladas — capital requerido por año de inicio</div>
         <div class="chart-wrap" style="height:320px"><canvas id="chartNec"></canvas></div>
         <p class="chart-note">Cada barra muestra el capital necesario si el evento ocurriese ese año: vivienda (base fija) + suma de gastos futuros desde ese año en adelante.</p>
@@ -267,6 +293,54 @@
             <line x1="9" y1="15" x2="15" y2="15"/>
           </svg>
           Exportar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAN DE PROTECCIÓN -->
+  <div id="sec-plan" class="hidden">
+    <div class="section" style="margin-top:2rem">
+      <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">Plan de protección</span></div>
+      <div class="card">
+
+        <div style="margin-bottom:1.25rem">
+          <div style="font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem">Cobertura propuesta</div>
+          <div class="row">
+            <div class="field"><label>Cobertura Vida Entera (capital fijo)</label><input type="number" id="cobVida" value="0" placeholder="0"/></div>
+            <div class="field"><label>Renta Familiar — cuota anual</label><input type="number" id="rentaCuota" value="0" placeholder="0"/></div>
+            <div class="field"><label>Renta Familiar — cantidad de años</label><input type="number" id="rentaAnios" value="0" min="0" max="50" placeholder="0"/></div>
+          </div>
+          <p class="note" style="margin-top:8px">Renta familiar: si ponés $10.000 por 5 años → año 1 = $50.000, año 2 = $40.000... hasta $0 en el año 5.</p>
+        </div>
+
+        <button class="calc-btn" style="margin:0 auto" onclick="calcPlan()">Ver plan de protección</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTADOS PLAN -->
+  <div id="results-plan" class="hidden">
+    <div class="section">
+      <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">Plan de protección — resultado</span></div>
+      <div id="sum-plan" class="summary-grid"></div>
+      <div class="card">
+        <div class="legend" id="legend-plan"></div>
+
+        <div class="chart-heading">Necesidades vs. cobertura acumulada — plan de protección</div>
+        <div class="chart-wrap" style="height:320px"><canvas id="chartPlan"></canvas></div>
+        <p class="chart-note">Rojo: necesidades acumuladas totales. Verde: cobertura disponible (ingresos del cónyuge + Vida Entera + Renta Familiar). La línea punteada es la necesidad neta real. Cuando las barras verdes igualan o superan las rojas, el plan cubre todas las necesidades.</p>
+        <button class="tbl-toggle" onclick="togTbl('tw-plan2',this)">Ver tabla de datos</button>
+        <div id="tw-plan2" class="tbl-wrap hidden"><table class="data-table" id="t-plan2"></table></div>
+
+        <button class="pdf-btn" onclick="exportPDF()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          Exportar PDF completo
         </button>
       </div>
     </div>
@@ -530,6 +604,8 @@ function exportPDF() {
 }
 
 // --- CALCULAR ---
+var gCalc = null; // store last calc results globally
+
 function calcular() {
   var horizon = parseInt(document.getElementById('horizon').value)||20;
   var dMant = [], dEdu = [], dEv = [];
@@ -613,47 +689,76 @@ function calcular() {
 
   // Destroy old charts
   if (charts.anual) { charts.anual.destroy(); charts.anual=null; }
+  if (charts.neto)  { charts.neto.destroy();  charts.neto=null; }
   if (charts.nec)   { charts.nec.destroy();   charts.nec=null; }
 
-  // Chart 1: anual
+  // Chart 1: anual - barras apiladas de gastos + línea de brecha neta
   var ctx1 = document.getElementById('chartAnual').getContext('2d');
   charts.anual = new Chart(ctx1, {
     type:'bar',
     data:{ labels:yLabels, datasets:[
-      {label:'Mantenimiento',data:dMant,backgroundColor:C.mant,stack:'s'},
-      {label:'Educación',    data:dEdu, backgroundColor:C.edu, stack:'s'},
-      {label:'Eventos',      data:dEv,  backgroundColor:C.ev,  stack:'s'}
+      {label:'Mantenimiento',data:dMant,backgroundColor:C.mant,stack:'s',order:2},
+      {label:'Educación',    data:dEdu, backgroundColor:C.edu, stack:'s',order:2},
+      {label:'Eventos',      data:dEv,  backgroundColor:C.ev,  stack:'s',order:2},
+      {label:'Necesidad neta (desc. ingresos)', data:brechaAnual,
+       type:'line', borderColor:'#1A1A2E', backgroundColor:'transparent',
+       borderWidth:2, borderDash:[4,3], pointRadius:2, tension:0.3, order:1}
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);}}}},
+      plugins:{ legend:{display:true, position:'top', labels:{font:{size:11},boxWidth:12,padding:14}},
+                tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);}}}},
       scales:{ x:{stacked:true,ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
                y:{stacked:true,ticks:{callback:function(v){return fmt(v);},font:{size:11}}} }
     }
   });
 
-  // Chart 2: acumulado
+  // Chart 3: necesidades acumuladas con ingresos superpuestos + línea necesidad neta
   var vivArr = [];
   for (var i=0;i<horizon;i++) vivArr.push(vivMonto);
+
+  // Ingresos acumulados futuros desde año i (capped at total need)
+  var ingAcum = [];
+  for (var i=0; i<horizon; i++) {
+    var aniosIng = Math.max(0, Math.min(mantAniosVal, horizon) - i);
+    var totalNec = vivMonto + necMant[i] + necEdu[i] + necEv[i];
+    ingAcum.push(Math.min(ingAnual * aniosIng, totalNec));
+  }
+
   var ctx2 = document.getElementById('chartNec').getContext('2d');
   charts.nec = new Chart(ctx2, {
-    type:'bar',
-    data:{ labels:yLabels, datasets:[
-      {label:'Vivienda',     data:vivArr,  backgroundColor:C.viv,  stack:'s'},
-      {label:'Mantenimiento',data:necMant, backgroundColor:C.mant, stack:'s'},
-      {label:'Educación',    data:necEdu,  backgroundColor:C.edu,  stack:'s'},
-      {label:'Eventos',      data:necEv,   backgroundColor:C.ev,   stack:'s'}
+    type: 'bar',
+    data: { labels: yLabels, datasets: [
+      {label:'Vivienda',      data:vivArr,  backgroundColor:C.viv,  stack:'s', order:2},
+      {label:'Mantenimiento', data:necMant, backgroundColor:C.mant, stack:'s', order:2},
+      {label:'Educación',     data:necEdu,  backgroundColor:C.edu,  stack:'s', order:2},
+      {label:'Eventos',       data:necEv,   backgroundColor:C.ev,   stack:'s', order:2},
+      {label:'Cubierto por ingresos',
+       data: ingAcum,
+       backgroundColor:'rgba(255,255,255,0.50)',
+       borderColor:'rgba(255,255,255,0.8)',
+       borderWidth:1,
+       stack:'s', order:1},
+      {label:'Necesidad neta',
+       data: brechaAcum,
+       type:'line',
+       borderColor:'#1A1A2E',
+       backgroundColor:'transparent',
+       borderWidth:2.5,
+       borderDash:[5,3],
+       pointRadius:2,
+       tension:0.2,
+       order:0}
     ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{
-        label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);},
-        afterBody:function(items){
-          var i=items[0].dataIndex;
-          return 'Total: '+fmtF(vivMonto+necMant[i]+necEdu[i]+necEv[i]);
-        }
-      }}},
-      scales:{ x:{stacked:true,ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
-               y:{stacked:true,ticks:{callback:function(v){return fmt(v);},font:{size:11}},
-                  title:{display:true,text:'Capital necesario',font:{size:11},color:'#5A5A7A'}} }
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true, position:'top', labels:{font:{size:11},boxWidth:12,padding:14}},
+        tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);}}}
+      },
+      scales:{
+        x:{stacked:true, ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
+        y:{stacked:true, ticks:{callback:function(v){return fmt(v);},font:{size:11}},
+           title:{display:true,text:'Capital necesario',font:{size:11},color:'#5A5A7A'}}
+      }
     }
   });
 
@@ -661,8 +766,284 @@ function calcular() {
   buildTable1(yLabels, dMant, dEdu, dEv, horizon);
   buildTable2(yLabels, vivMonto, necMant, necEdu, necEv, horizon);
 
+  // Ingresos conyuge - aplica solo durante años de mantenimiento
+  var mantAniosVal = parseInt(document.getElementById('mantAnios').value)||horizon;
+  var ingMens = 0;
+  if (document.getElementById('chkIng').checked) {
+    ingMens = (parseFloat(document.getElementById('ingConyuge').value)||0) +
+              (parseFloat(document.getElementById('ingOtros').value)||0);
+  }
+  var ingAnual = ingMens * 12;
+
+  // Brecha anual neta (año a año)
+  var brechaAnual = [];
+  for (var i=0; i<horizon; i++) {
+    var nec = dMant[i] + dEdu[i] + dEv[i];
+    var ing = (i < mantAniosVal) ? ingAnual : 0;
+    brechaAnual.push(Math.max(0, nec - ing));
+  }
+
+  // Brecha acumulada neta (sufijo sum de brechaAnual + vivienda fija)
+  var brechaAcum = [];
+  for (var i=0; i<horizon; i++) {
+    var necAcum = vivMonto + necMant[i] + necEdu[i] + necEv[i];
+    var ingFut = 0;
+    for (var j=i; j<Math.min(mantAniosVal, horizon); j++) ingFut += ingAnual;
+    brechaAcum.push(Math.max(0, necAcum - ingFut));
+  }
+
+  // Chart 2: necesidades NETAS por año (barras recortadas por ingresos)
+  // Cada barra muestra solo lo que queda a cubrir con seguro (brecha real)
+  // Desglosamos la brecha por categoría proporcionalmente
+  var netaMant = [], netaEdu = [], netaEv = [], netaVivAnual = [];
+  for (var i = 0; i < horizon; i++) {
+    var bruta = dMant[i] + dEdu[i] + dEv[i];
+    var ing   = (i < mantAniosVal) ? ingAnual : 0;
+    var neta  = Math.max(0, bruta - ing);
+    // distribute neta proportionally across categories
+    if (bruta > 0) {
+      netaMant.push(dMant[i] / bruta * neta);
+      netaEdu.push(dEdu[i]  / bruta * neta);
+      netaEv.push(dEv[i]    / bruta * neta);
+    } else {
+      netaMant.push(0); netaEdu.push(0); netaEv.push(0);
+    }
+  }
+
+  if (charts.neto) { charts.neto.destroy(); charts.neto = null; }
+  var ctxN = document.getElementById('chartNeto').getContext('2d');
+  charts.neto = new Chart(ctxN, {
+    type: 'bar',
+    data: { labels: yLabels, datasets: [
+      {label:'Mantenimiento', data:netaMant, backgroundColor:C.mant, stack:'s'},
+      {label:'Educación',     data:netaEdu,  backgroundColor:C.edu,  stack:'s'},
+      {label:'Eventos',       data:netaEv,   backgroundColor:C.ev,   stack:'s'}
+    ]},
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true, position:'top', labels:{font:{size:11},boxWidth:12,padding:14}},
+        tooltip:{callbacks:{
+          label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);},
+          afterBody:function(items){
+            var i=items[0].dataIndex;
+            return 'Total neto: '+fmtF(brechaAnual[i]);
+          }
+        }}
+      },
+      scales:{
+        x:{stacked:true, ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
+        y:{stacked:true, ticks:{callback:function(v){return fmt(v);},font:{size:11}}}
+      }
+    }
+  });
+
+  // Table for neto chart
+  buildNetoTable(yLabels, netaMant, netaEdu, netaEv, brechaAnual, horizon);
+
+  // Store globally for plan calc
+  gCalc = { horizon:horizon, dMant:dMant, dEdu:dEdu, dEv:dEv, vivMonto:vivMonto,
+            necMant:necMant, necEdu:necEdu, necEv:necEv, yLabels:yLabels,
+            ingAnual:ingAnual, mantAniosVal:mantAniosVal,
+            brechaAnual:brechaAnual, brechaAcum:brechaAcum };
+
   document.getElementById('results').classList.remove('hidden');
+  document.getElementById('sec-plan').classList.remove('hidden');
+  document.getElementById('results-plan').classList.add('hidden');
   document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+
+
+function calcPlan() {
+  if (!gCalc) { alert('Primero calculá el análisis de necesidades.'); return; }
+
+  var horizon      = gCalc.horizon;
+  var yLabels      = gCalc.yLabels;
+  var vivMonto     = gCalc.vivMonto;
+  var necMant      = gCalc.necMant;
+  var necEdu       = gCalc.necEdu;
+  var necEv        = gCalc.necEv;
+  var brechaAcum   = gCalc.brechaAcum;
+  var ingAnual     = gCalc.ingAnual;
+  var mantAniosVal = gCalc.mantAniosVal;
+
+  var cobVida    = parseFloat(document.getElementById('cobVida').value) || 0;
+  var rentaCuota = parseFloat(document.getElementById('rentaCuota').value) || 0;
+  var rentaAnios = parseInt(document.getElementById('rentaAnios').value) || 0;
+
+  // Renta familiar decreciente acumulada desde año i
+  var rentaAcum = [];
+  for (var i = 0; i < horizon; i++) {
+    var r = rentaAnios - i;
+    rentaAcum.push(r > 0 ? rentaCuota * r : 0);
+  }
+
+  // Ingresos acumulados futuros desde año i
+  var ingAcum = [];
+  for (var i = 0; i < horizon; i++) {
+    var aniosIng = Math.max(0, Math.min(mantAniosVal, horizon) - i);
+    ingAcum.push(ingAnual * aniosIng);
+  }
+
+  // Necesidades totales acumuladas
+  var necTotal = [];
+  for (var i = 0; i < horizon; i++) {
+    necTotal.push(vivMonto + necMant[i] + necEdu[i] + necEv[i]);
+  }
+
+  // Cobertura total = ingresos + vida entera + renta
+  var cobTotalFull = [];
+  var vidaArr = [];
+  for (var i = 0; i < horizon; i++) {
+    vidaArr.push(cobVida);
+    cobTotalFull.push(ingAcum[i] + cobVida + rentaAcum[i]);
+  }
+
+  // Summary
+  var maxBrecha  = brechaAcum[0] || 0;
+  var cobAnio1   = cobTotalFull[0] || 0;
+  var diferencia = cobAnio1 - maxBrecha;
+
+  document.getElementById('sum-plan').innerHTML =
+    mkMetric('Necesidad neta año 1', fmtF(maxBrecha), 'a cubrir con seguro', '#C0392B', false) +
+    mkMetric('Cobertura total año 1', fmtF(cobAnio1), 'ingresos + vida + renta', '#1A7A4A', false) +
+    mkMetric(diferencia >= 0 ? 'Excedente' : 'Déficit',
+             fmtF(Math.abs(diferencia)),
+             diferencia >= 0 ? 'cobertura suficiente ✓' : 'cobertura insuficiente ✗',
+             diferencia >= 0 ? '#1A7A4A' : '#C0392B', true) +
+    mkMetric('Vida Entera', fmtF(cobVida), 'capital fijo permanente', '#1A7A4A', false) +
+    mkMetric('Renta Familiar', fmtF(rentaCuota * rentaAnios), rentaAnios + ' años', '#27AE60', false);
+
+  document.getElementById('legend-plan').innerHTML =
+    mkLeg('Necesidades acumuladas', 'rgba(180,0,0,0.75)') +
+    mkLeg('Vida Entera (base)', 'rgba(26,122,74,0.90)') +
+    mkLeg('Renta Familiar', 'rgba(88,214,141,0.85)') +
+    mkLeg('Ingresos cónyuge', 'rgba(39,174,96,0.85)') +
+    mkLeg('Necesidad neta (línea)', '#7B241C');
+
+  if (charts.plan) { charts.plan.destroy(); charts.plan = null; }
+
+  var ctx = document.getElementById('chartPlan').getContext('2d');
+  charts.plan = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: yLabels, datasets: [
+      // Necesidades: barra ancha de fondo (80% ancho, z-index bajo)
+      { label:'Necesidades acumuladas',
+        data: necTotal,
+        backgroundColor: 'rgba(180,0,0,0.75)',
+        borderColor: 'rgba(180,0,0,0.90)',
+        borderWidth: 1,
+        order: 4,
+        barPercentage: 0.95,
+        categoryPercentage: 0.95 },
+
+      // Cobertura: Vida Entera (base) → Renta Familiar → Ingresos (arriba)
+      { label:'Vida Entera',
+        data: vidaArr,
+        backgroundColor: 'rgba(26,122,74,0.90)',
+        borderColor: 'rgba(26,122,74,1.0)',
+        borderWidth: 1,
+        stack: 'cob',
+        order: 2,
+        barPercentage: 0.72,
+        categoryPercentage: 0.95 },
+      { label:'Renta Familiar',
+        data: rentaAcum,
+        backgroundColor: 'rgba(88,214,141,0.85)',
+        borderColor: 'rgba(88,214,141,1.0)',
+        borderWidth: 1,
+        stack: 'cob',
+        order: 2,
+        barPercentage: 0.72,
+        categoryPercentage: 0.95 },
+      { label:'Ingresos cónyuge',
+        data: ingAcum,
+        backgroundColor: 'rgba(39,174,96,0.85)',
+        borderColor: 'rgba(39,174,96,1.0)',
+        borderWidth: 1,
+        stack: 'cob',
+        order: 2,
+        barPercentage: 0.72,
+        categoryPercentage: 0.95 },
+
+      // Línea necesidad neta
+      { label:'Necesidad neta',
+        data: brechaAcum,
+        type: 'line',
+        borderColor: '#7B241C',
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
+        borderDash: [5,3],
+        pointRadius: 3,
+        pointBackgroundColor: '#7B241C',
+        tension: 0.2,
+        order: 0 }
+    ]},
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ display:true, position:'top', labels:{font:{size:11}, boxWidth:12, padding:14} },
+        tooltip:{ callbacks:{ label:function(ctx){ return ctx.dataset.label+': '+fmtF(ctx.raw); } } }
+      },
+      scales:{
+        x:{ ticks:{autoSkip:true, maxRotation:45, font:{size:11}} },
+        y:{ ticks:{callback:function(v){return fmt(v);}, font:{size:11}},
+            title:{display:true, text:'Capital acumulado', font:{size:11}, color:'#5A5A7A'} }
+      }
+    }
+  });
+
+  buildPlanTable2(yLabels, brechaAcum, vidaArr, rentaAcum, ingAcum, cobTotalFull, horizon);
+
+  document.getElementById('results-plan').classList.remove('hidden');
+  document.getElementById('results-plan').scrollIntoView({behavior:'smooth'});
+}
+
+
+function buildPlanTable1(yLabels, dMant, dEdu, dEv, ingAnual, mantAniosVal, brechaAnual, horizon) {
+  var t = document.getElementById('t-plan1');
+  var h = '<thead><tr><th>Concepto</th>';
+  for (var i=0;i<horizon;i++) h += '<th>'+yLabels[i]+'</th>';
+  h += '</tr></thead><tbody>';
+  var necAnual = [];
+  var ingAnualArr = [];
+  for (var i=0;i<horizon;i++) {
+    necAnual.push(dMant[i]+dEdu[i]+dEv[i]);
+    ingAnualArr.push(i < mantAniosVal ? ingAnual : 0);
+  }
+  var rows = [
+    {label:'Necesidad anual',  data:necAnual,   cls:''},
+    {label:'Ingresos cónyuge', data:ingAnualArr, cls:''},
+    {label:'Brecha neta anual',data:brechaAnual, cls:' class="tot-row"'}
+  ];
+  for (var r=0;r<rows.length;r++){
+    h += '<tr'+rows[r].cls+'><td>'+rows[r].label+'</td>';
+    for (var i=0;i<horizon;i++) h += '<td>'+fmtN(rows[r].data[i])+'</td>';
+    h += '</tr>';
+  }
+  h += '</tbody>';
+  t.innerHTML = h;
+}
+
+function buildPlanTable2(yLabels, brechaAcum, cobVidaPlot, cobRentaPlot, ingAcum, cobTotal, horizon) {
+  var t = document.getElementById('t-plan2');
+  var h = '<thead><tr><th>Concepto</th>';
+  for (var i=0;i<horizon;i++) h += '<th>'+yLabels[i]+'</th>';
+  h += '</tr></thead><tbody>';
+  var cobTotalPlot = [];
+  for (var i=0;i<horizon;i++) cobTotalPlot.push(ingAcum[i]+cobVidaPlot[i]+cobRentaPlot[i]);
+  var rows = [
+    {label:'Necesidad neta acumulada', data:brechaAcum,    cls:''},
+    {label:'Ingresos del cónyuge',     data:ingAcum,       cls:''},
+    {label:'Vida Entera',              data:cobVidaPlot,   cls:''},
+    {label:'Renta Familiar',           data:cobRentaPlot,  cls:''},
+    {label:'Cobertura total',          data:cobTotalPlot,  cls:' class="tot-row"'}
+  ];
+  for (var r=0;r<rows.length;r++){
+    h += '<tr'+rows[r].cls+'><td>'+rows[r].label+'</td>';
+    for (var i=0;i<horizon;i++) h += '<td>'+fmtN(rows[r].data[i])+'</td>';
+    h += '</tr>';
+  }
+  h += '</tbody>';
+  t.innerHTML = h;
 }
 
 function mkMetric(label, val, sub, color, hi) {
@@ -674,6 +1055,28 @@ function mkMetric(label, val, sub, color, hi) {
 }
 function mkLeg(label, color) {
   return '<span class="legend-item"><span class="legend-sq" style="background:'+color+'"></span>'+label+'</span>';
+}
+
+function buildNetoTable(yLabels, netaMant, netaEdu, netaEv, brechaAnual, horizon) {
+  var t = document.getElementById('t-neto');
+  if (!t) return;
+  var h = '<thead><tr><th>Concepto</th>';
+  for (var i=0;i<horizon;i++) h += '<th>'+yLabels[i]+'</th>';
+  h += '<th>Total</th></tr></thead><tbody>';
+  var rows = [
+    {label:'Mantenimiento (neto)', data:netaMant},
+    {label:'Educación (neto)',     data:netaEdu},
+    {label:'Eventos (neto)',       data:netaEv},
+    {label:'Total a cubrir',       data:brechaAnual}
+  ];
+  for (var r=0;r<rows.length;r++){
+    var tot=0;
+    h += '<tr'+(r===3?' class="tot-row"':'')+'><td>'+rows[r].label+'</td>';
+    for (var i=0;i<horizon;i++){h+='<td>'+fmtN(rows[r].data[i])+'</td>';tot+=rows[r].data[i];}
+    h += '<td>'+fmtN(tot)+'</td></tr>';
+  }
+  h += '</tbody>';
+  t.innerHTML = h;
 }
 
 function buildTable1(yLabels, dMant, dEdu, dEv, horizon) {
