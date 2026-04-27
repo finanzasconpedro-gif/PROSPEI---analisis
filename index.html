@@ -227,7 +227,7 @@
     <div class="card">
       <div class="toggle-row"><input type="checkbox" id="chkEv" checked /><span class="toggle-label">Incluir en el análisis</span></div>
       <div id="sec-ev">
-        <div id="ev-list"></div>
+        <div id="eventos-lista"></div>
         <button class="add-btn" onclick="addEvento()">+ Agregar evento</button>
       </div>
     </div>
@@ -477,7 +477,7 @@ function addEtapa(btn) {
 // --- EVENTOS ---
 function addEvento() {
   evCount++;
-  var id = 'ev-'+evCount;
+  var id = 'evento-'+evCount;
   var div = document.createElement('div');
   div.className = 'card-inner'; div.id = id; div.style.marginBottom = '8px';
   div.innerHTML =
@@ -490,7 +490,7 @@ function addEvento() {
       '<div class="field"><label>Monto</label><input type="number" class="ev-monto" value="15000"/></div>'+
       '<div class="field"><label>En qué año</label><input type="number" class="ev-anio" value="5" min="1" max="50"/></div>'+
     '</div>';
-  document.getElementById('ev-list').appendChild(div);
+  document.getElementById('eventos-lista').appendChild(div);
 }
 
 function quitarEl(id) { var el=document.getElementById(id); if(el) el.remove(); }
@@ -570,7 +570,7 @@ function calcular() {
 
   // Eventos
   if (document.getElementById('chkEv').checked) {
-    var evDivs = document.querySelectorAll('[id^="ev-"]');
+    var evDivs = document.querySelectorAll('[id^="evento-"]');
     for (var j=0; j<evDivs.length; j++) {
       var el = evDivs[j];
       var m = parseFloat(el.querySelector('.ev-monto').value)||0;
