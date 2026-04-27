@@ -107,71 +107,91 @@
     .site-footer { text-align: center; padding: 2rem 1.5rem; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); background: var(--white); margin-top: 2rem; }
 
     @media print {
-      /* Force colors */
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box !important; }
 
-      /* Page setup */
-      @page { margin: 1cm 1.2cm; size: A4 portrait; }
-      @page :first { margin-top: 0.5cm; }
+      @page { margin: 1.2cm 1.4cm; size: A4 portrait; }
 
-      /* Hide interactive elements */
+      /* ── HIDE EVERYTHING BY DEFAULT ── */
+      body > * { display: none !important; }
+      .accent-bar, .site-header, .main { display: block !important; }
+
+      /* Hide all interactive controls */
       .calc-btn, .pdf-btn, .add-btn, .remove-btn,
       .tbl-toggle, .toggle-row, .site-footer,
-      #sec-plan, #sec-viv, #sec-mant, #sec-edu, #sec-ev, #sec-ing,
-      .section-label .sec-dot { display: none !important; }
+      #results, #results-plan, #sec-plan { display: none !important; }
 
-      /* Reset layout */
-      body { background: white !important; font-size: 11px; }
-      .main { max-width: 100% !important; padding: 0.3cm 0 !important; }
-      .site-header { padding: 0.6rem 0 0.8rem !important; }
-      .header-inner { max-width: 100% !important; padding: 0 0.5cm !important; }
-      .header-logo { height: 50px !important; }
-      .header-title { font-size: 18px !important; }
-
-      /* Cards compact */
-      .card { padding: 0.5rem 0.7rem !important; box-shadow: none !important; margin-bottom: 0.4rem !important; border: 0.5px solid #ddd !important; }
-      .card-inner { padding: 0.4rem 0.6rem !important; }
+      /* ── GLOBAL RESET ── */
+      body { background: white !important; margin: 0 !important; }
+      .accent-bar { height: 4px !important; background: linear-gradient(90deg, #5B2ECC, #3B6FD4, #C5CEF5) !important; }
+      .site-header { padding: 0.6rem 0 0.8rem !important; border-bottom: 1px solid #D0D4EE !important; background: white !important; }
+      .header-inner { max-width: 100% !important; padding: 0 0.5cm !important; gap: 1rem !important; }
+      .header-logo { height: 52px !important; }
+      .header-title { font-size: 20px !important; }
+      .header-sub { font-size: 11px !important; }
+      .header-divider { display: block !important; }
+      .main { max-width: 100% !important; padding: 0.4cm 0 0 !important; }
       .section { margin-bottom: 0.5rem !important; }
+      .sec-label { margin-bottom: 0.4rem !important; }
+      .sec-title { font-size: 10px !important; }
+      .card { padding: 0.5rem 0.7rem !important; box-shadow: none !important; border: 0.5px solid #D0D4EE !important; border-radius: 8px !important; margin-bottom: 0.4rem !important; }
+      .card-inner { padding: 0.35rem 0.6rem !important; margin-top: 0.4rem !important; }
+      .field label { font-size: 9px !important; }
+      .field input, .field select { font-size: 11px !important; border: none !important; background: transparent !important; padding: 2px 0 !important; width: auto !important; }
+      .row { gap: 8px !important; }
+      .persona-avatar { width: 24px !important; height: 24px !important; font-size: 10px !important; margin-bottom: 6px !important; }
+      .persona-card { padding: 0.4rem 0.5rem !important; }
+      .familia-grid { grid-template-columns: repeat(4,1fr) !important; gap: 8px !important; }
+      #hijos-grid { grid-template-columns: repeat(4,1fr) !important; gap: 8px !important; margin-top: 8px !important; }
+      .note { font-size: 9px !important; }
+      .etapa-row { gap: 4px !important; margin-bottom: 4px !important; }
+      .etapa-row span { font-size: 10px !important; min-width: 70px !important; }
+      .etapas-list .field label { font-size: 8px !important; }
 
-      /* Show tables that were hidden */
-      .tbl-wrap { display: block !important; overflow: visible !important; }
-      .data-table { font-size: 9px !important; }
-      .data-table th, .data-table td { padding: 3px 5px !important; }
+      /* ── HOJA 1: DATOS ── */
+      /* Show form sections, hide results */
+      .section:not(#p-results):not(#p-plan) { display: block !important; }
 
-      /* PAGE BREAK CONTROL */
-      /* Page 1: header + form sections + 3 charts */
-      #results { page-break-before: avoid !important; }
-      #results .card { page-break-inside: avoid; }
-
-      /* Chart sizes for print */
-      .chart-wrap { height: 180px !important; }
-      .chart-wrap canvas { max-height: 180px !important; }
-      .chart-heading { font-size: 11px !important; font-weight: 600; margin-bottom: 4px !important; }
-      .chart-note { font-size: 9px !important; margin-top: 4px !important; }
-      .sep { margin: 0.4rem 0 !important; }
-
-      /* Metrics grid compact */
-      .summary-grid { gap: 6px !important; margin-bottom: 0.5rem !important; }
-      .metric { padding: 0.4rem 0.6rem !important; }
-      .metric-val { font-size: 14px !important; }
-      .metric-label { font-size: 9px !important; }
-
-      /* Legend compact */
-      .legend { gap: 8px !important; margin-bottom: 6px !important; }
+      /* ── HOJA 2: GRÁFICOS ── */
+      #results {
+        display: block !important;
+        page-break-before: always !important;
+      }
+      #results .summary-grid { display: grid !important; gap: 6px !important; margin-bottom: 0.5rem !important; }
+      #results .metric { padding: 0.4rem 0.6rem !important; }
+      #results .metric-val { font-size: 13px !important; }
+      #results .metric-label { font-size: 9px !important; }
+      #results .metric-sub { font-size: 8px !important; }
+      #results .card { display: block !important; }
+      .legend { gap: 8px !important; margin-bottom: 6px !important; flex-wrap: wrap !important; }
       .legend-item { font-size: 9px !important; }
+      .chart-heading { font-size: 11px !important; font-weight: 600 !important; margin-bottom: 5px !important; }
+      .chart-wrap { height: 190px !important; position: relative !important; }
+      .chart-wrap canvas { max-height: 190px !important; width: 100% !important; }
+      .chart-note { font-size: 9px !important; margin-top: 4px !important; line-height: 1.3 !important; }
+      .sep { margin: 0.5rem 0 !important; border-top: 0.5px solid #D0D4EE !important; }
+      .tbl-wrap { display: none !important; }
 
-      /* Page 2: plan de proteccion */
-      #sec-plan { display: block !important; page-break-before: always !important; }
-      #results-plan { page-break-before: avoid !important; }
-      #results-plan .card { page-break-inside: avoid; }
-
-      /* Hide form inputs visually but keep their labels readable */
-      input, select { border: none !important; background: transparent !important; padding: 0 !important; font-size: 11px !important; }
-
-      /* Familia grid print */
-      .familia-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
-      .persona-card { padding: 0.4rem !important; }
-      .persona-avatar { width: 22px !important; height: 22px !important; font-size: 10px !important; margin-bottom: 4px !important; }
+      /* ── HOJA 3: PLAN ── */
+      #sec-plan {
+        display: block !important;
+        page-break-before: always !important;
+      }
+      #sec-plan .card { display: block !important; }
+      #sec-plan input { font-size: 11px !important; border: none !important; background: transparent !important; padding: 2px 0 !important; }
+      #results-plan {
+        display: block !important;
+        page-break-before: avoid !important;
+      }
+      #results-plan .summary-grid { display: grid !important; gap: 6px !important; margin-bottom: 0.5rem !important; }
+      #results-plan .metric { padding: 0.4rem 0.6rem !important; }
+      #results-plan .metric-val { font-size: 13px !important; }
+      #results-plan .metric-label { font-size: 9px !important; }
+      #results-plan .card { display: block !important; }
+      #results-plan .chart-wrap { height: 260px !important; }
+      #results-plan .chart-wrap canvas { max-height: 260px !important; }
+      #results-plan .tbl-wrap { display: block !important; overflow: visible !important; }
+      #results-plan .data-table { font-size: 8px !important; width: 100% !important; }
+      #results-plan .data-table th, #results-plan .data-table td { padding: 2px 4px !important; white-space: nowrap !important; }
     }
     @media (max-width: 520px) {
       .header-inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
