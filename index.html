@@ -673,489 +673,274 @@ function togTbl(id, btn) {
 function exportPDF() {
   if (!gCalc) { alert('Primero calculá el análisis de necesidades.'); return; }
 
-  // Capture chart images
-  var imgAnual = document.getElementById('chartAnual') ? document.getElementById('chartAnual').toDataURL('image/png') : '';
-  var imgNeto  = document.getElementById('chartNeto')  ? document.getElementById('chartNeto').toDataURL('image/png')  : '';
-  var imgNec   = document.getElementById('chartNec')   ? document.getElementById('chartNec').toDataURL('image/png')   : '';
-  var imgPlan  = document.getElementById('chartPlan')  ? document.getElementById('chartPlan').toDataURL('image/png')  : '';
+  // Capture charts as images at high resolution
+  var imgAnual = document.getElementById('chartAnual') ? document.getElementById('chartAnual').toDataURL('image/png', 1.0) : null;
+  var imgNeto  = document.getElementById('chartNeto')  ? document.getElementById('chartNeto').toDataURL('image/png', 1.0)  : null;
+  var imgNec   = document.getElementById('chartNec')   ? document.getElementById('chartNec').toDataURL('image/png', 1.0)   : null;
+  var imgPlan  = document.getElementById('chartPlan')  ? document.getElementById('chartPlan').toDataURL('image/png', 1.0)  : null;
 
-  // Collect family data
+  var logoSrc  = document.querySelector('.header-logo') ? document.querySelector('.header-logo').src : '';
+
+  // Collect data
   var titNombre = document.getElementById('titNombre').value || '-';
-  var titEdad   = document.getElementById('titEdad').value || '-';
+  var titEdad   = document.getElementById('titEdad').value   || '-';
   var parNombre = document.getElementById('parNombre').value || '';
-  var parEdad   = document.getElementById('parEdad').value || '';
+  var parEdad   = document.getElementById('parEdad').value   || '';
 
-  var hijosHTML = '';
+  var hijos = [];
   document.querySelectorAll('[id^="hijofam-"]').forEach(function(el) {
     var num = el.id.split('-')[1];
     var n = document.getElementById('hf'+num+'Nombre') ? document.getElementById('hf'+num+'Nombre').value : '';
     var e = document.getElementById('hf'+num+'Edad')   ? document.getElementById('hf'+num+'Edad').value   : '';
-    if (n) hijosHTML += '<td><strong>'+n+'</strong><br><span>'+e+' años</span></td>';
+    if (n) hijos.push({nombre:n, edad:e});
   });
 
-  // Collect needs data
-  var vivienda  = document.getElementById('chkViv').checked  ? fmtF(parseFloat(document.getElementById('propVal').value)||0) : '-';
-  var mantMens  = document.getElementById('chkMant').checked ? fmtF((parseFloat(document.getElementById('mantMens').value)||0)) : '-';
-  var mantAnios = document.getElementById('mantAnios').value;
-  var ingCon    = fmtF((parseFloat(document.getElementById('ingConyuge').value)||0));
-  var ingOtros  = fmtF((parseFloat(document.getElementById('ingOtros').value)||0));
+  var cur      = document.getElementById('currency').value;
+  var horizon  = document.getElementById('horizon').value;
+  var vivienda = document.getElementById('chkViv').checked ? fmtF(parseFloat(document.getElementById('propVal').value)||0) : '-';
+  var mantM    = document.getElementById('chkMant').checked ? fmtF(parseFloat(document.getElementById('mantMens').value)||0) : '-';
+  var mantA    = document.getElementById('mantAnios').value;
+  var ingCon   = fmtF(parseFloat(document.getElementById('ingConyuge').value)||0);
+  var ingOt    = fmtF(parseFloat(document.getElementById('ingOtros').value)||0);
 
-  // Collect educacion
-  var eduHTML = '';
+  var eduRows = [];
   document.querySelectorAll('[id^="eduhijo-"]').forEach(function(ed) {
     var famId = ed.dataset.famid;
     var num = famId ? famId.split('-')[1] : '';
     var nombre = (document.getElementById('hf'+num+'Nombre') ? document.getElementById('hf'+num+'Nombre').value : '') || 'Hijo/a';
-    eduHTML += '<tr><td colspan="4" style="background:#f4f5fc;font-weight:600;padding:4px 8px">'+nombre+'</td></tr>';
-    var rows = ed.querySelectorAll('.etapa-row');
-    rows.forEach(function(row) {
-      var chk   = row.querySelector('.etapa-chk');
-      var label = row.querySelector('.etapa-label');
-      var dur   = row.querySelector('.etapa-dur');
-      var costo = row.querySelector('.etapa-costo');
+    var edad   = (document.getElementById('hf'+num+'Edad')   ? document.getElementById('hf'+num+'Edad').value   : '') || '';
+    var etapas = [];
+    ed.querySelectorAll('.etapa-row').forEach(function(row) {
+      var chk = row.querySelector('.etapa-chk');
       if (chk && chk.checked) {
-        eduHTML += '<tr><td style="padding-left:16px">'+(label?label.value:'')+'</td><td>'+(dur?dur.value+' años':'')+'</td><td>'+(costo?fmtF(parseFloat(costo.value)||0)+'/mes':'')+'</td><td>'+fmtF((parseFloat(costo?costo.value:0)||0)*11*(parseInt(dur?dur.value:0)||0))+'</td></tr>';
+        var lbl   = row.querySelector('.etapa-label') ? row.querySelector('.etapa-label').value : '';
+        var dur   = row.querySelector('.etapa-dur')   ? row.querySelector('.etapa-dur').value   : '0';
+        var costo = row.querySelector('.etapa-costo') ? row.querySelector('.etapa-costo').value : '0';
+        if (parseInt(dur) > 0) etapas.push({lbl:lbl, dur:dur, costo:fmtF(parseFloat(costo)||0)});
       }
     });
+    if (etapas.length) eduRows.push({nombre:nombre, edad:edad, etapas:etapas});
   });
 
-  // Collect eventos
-  var evHTML = '';
+  var eventos = [];
   document.querySelectorAll('[id^="evento-"]').forEach(function(ev) {
     var desc  = ev.querySelector('.ev-desc')  ? ev.querySelector('.ev-desc').value  : '';
     var monto = ev.querySelector('.ev-monto') ? ev.querySelector('.ev-monto').value : '';
     var anio  = ev.querySelector('.ev-anio')  ? ev.querySelector('.ev-anio').value  : '';
-    if (monto) evHTML += '<tr><td>'+desc+'</td><td>'+fmtF(parseFloat(monto)||0)+'</td><td>Año '+anio+'</td></tr>';
+    if (monto) eventos.push({desc:desc||'Evento', monto:fmtF(parseFloat(monto)||0), anio:anio});
   });
 
-  // Plan data
-  var cobVida    = document.getElementById('cobVida')    ? fmtF(parseFloat(document.getElementById('cobVida').value)||0)    : '-';
-  var rentaCuota = document.getElementById('rentaCuota') ? fmtF(parseFloat(document.getElementById('rentaCuota').value)||0) : '-';
-  var rentaAnios = document.getElementById('rentaAnios') ? document.getElementById('rentaAnios').value : '-';
-  var sumPlanHTML = document.getElementById('sum-plan') ? document.getElementById('sum-plan').innerHTML : '';
+  var cobVida    = fmtF(parseFloat(document.getElementById('cobVida').value)||0);
+  var rentaCuota = fmtF(parseFloat(document.getElementById('rentaCuota').value)||0);
+  var rentaAnios = document.getElementById('rentaAnios').value;
 
-  // Get logo
-  var logoSrc = document.querySelector('.header-logo') ? document.querySelector('.header-logo').src : '';
+  // Build metrics HTML for plan summary
+  var sumPlan = document.getElementById('sum-plan');
+  var metrics = [];
+  if (sumPlan) {
+    sumPlan.querySelectorAll('.metric').forEach(function(m) {
+      var lbl = m.querySelector('.metric-label') ? m.querySelector('.metric-label').textContent : '';
+      var val = m.querySelector('.metric-val')   ? m.querySelector('.metric-val').textContent   : '';
+      var sub = m.querySelector('.metric-sub')   ? m.querySelector('.metric-sub').textContent   : '';
+      metrics.push({lbl:lbl, val:val, sub:sub, hi:m.classList.contains('metric-hi')});
+    });
+  }
 
-  var win = window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html lang="es"><head>
-<meta charset="UTF-8"/>
-<title>Análisis de necesidades — Prospei</title>
+  // Build print window
+  var W = window.open('', '_blank', 'width=900,height=700');
+  if (!W) { alert('Por favor permitir popups para exportar el PDF.'); return; }
+
+  var metricsHtml = metrics.map(function(m) {
+    return '<div class="mbox'+(m.hi?' mbox-hi':'')+'"><div class="ml">'+m.lbl+'</div><div class="mv">'+m.val+'</div>'+(m.sub?'<div class="ms">'+m.sub+'</div>':'')+'</div>';
+  }).join('');
+
+  var famHtml = '<div class="fam-grid">';
+  famHtml += '<div class="fbox"><div class="fl">Titular</div><div class="fv">'+titNombre+'</div><div class="fs">'+titEdad+' años</div></div>';
+  if (parNombre) famHtml += '<div class="fbox"><div class="fl">Pareja</div><div class="fv">'+parNombre+'</div><div class="fs">'+parEdad+' años</div></div>';
+  hijos.forEach(function(h) { famHtml += '<div class="fbox"><div class="fl">Hijo/a</div><div class="fv">'+h.nombre+'</div><div class="fs">'+h.edad+' años</div></div>'; });
+  famHtml += '</div>';
+
+  var eduHtml = '';
+  eduRows.forEach(function(e) {
+    eduHtml += '<tr class="edu-hdr"><td colspan="3">'+e.nombre+' · '+e.edad+' años</td></tr>';
+    e.etapas.forEach(function(et) {
+      eduHtml += '<tr><td style="padding-left:12px">'+et.lbl+'</td><td>'+et.dur+' años</td><td>'+et.costo+'/mes</td></tr>';
+    });
+  });
+
+  var evHtml = eventos.map(function(e) {
+    return '<tr><td>'+e.desc+'</td><td>'+e.monto+'</td><td>Año '+e.anio+'</td></tr>';
+  }).join('');
+
+  W.document.write(`<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8">
+<title>Prospei — Análisis de necesidades</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;}
-  @page{size:A4 portrait;margin:1.2cm 1.4cm;}
-  body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#1A1A2E;background:white;}
-  .page{width:100%;page-break-after:always;padding-bottom:0.5cm;}
-  .page:last-child{page-break-after:avoid;}
+*{box-sizing:border-box;margin:0;padding:0;}
+@page{size:A4 portrait;margin:1.5cm 1.8cm;}
+body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#1A1A2E;background:white;}
 
-  /* HEADER */
-  .hdr{display:flex;align-items:center;gap:1.2rem;padding-bottom:0.5rem;border-bottom:3px solid #5B2ECC;margin-bottom:0.6rem;}
-  .hdr img{height:44px;width:auto;}
-  .hdr-div{width:1px;height:36px;background:#D0D4EE;}
-  .hdr-t{font-size:16px;font-weight:700;color:#1A1A2E;line-height:1.2;}
-  .hdr-s{font-size:9px;color:#5A5A7A;margin-top:2px;}
+/* PAGE BREAKS */
+.page{page-break-after:always;}
+.page:last-child{page-break-after:avoid;}
 
-  /* SECTION TITLE */
-  .stitle{font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#5A5A7A;margin:0.5rem 0 0.25rem;display:flex;align-items:center;gap:6px;}
-  .stitle::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#5B2ECC;flex-shrink:0;}
+/* HEADER */
+.hdr{display:flex;align-items:center;gap:14px;padding-bottom:10px;border-bottom:3px solid #5B2ECC;margin-bottom:14px;}
+.hdr img{height:46px;width:auto;flex-shrink:0;}
+.hdr-div{width:1px;height:38px;background:#D0D4EE;flex-shrink:0;}
+.hdr-title{font-size:17pt;font-weight:bold;color:#1A1A2E;line-height:1.2;}
+.hdr-sub{font-size:8pt;color:#5A5A7A;margin-top:2px;}
 
-  /* DATA GRID */
-  .dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:0.4rem;}
-  .dbox{background:#F4F5FC;border-radius:6px;padding:5px 7px;}
-  .dbox-label{font-size:8px;color:#5A5A7A;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;}
-  .dbox-val{font-size:11px;font-weight:600;color:#1A1A2E;}
+/* SECTION LABEL */
+.slabel{font-size:8pt;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#5B2ECC;margin:12px 0 6px;border-left:3px solid #5B2ECC;padding-left:7px;}
 
-  /* TABLES */
-  table{width:100%;border-collapse:collapse;margin-bottom:0.4rem;}
-  th{background:#F4F5FC;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:4px 6px;border:0.5px solid #D0D4EE;text-align:left;color:#5A5A7A;}
-  td{font-size:9px;padding:3px 6px;border:0.5px solid #D0D4EE;color:#1A1A2E;}
-  tr:nth-child(even) td{background:#FAFAFA;}
-  .tot td{background:#D8DFFB!important;font-weight:700;color:#5B2ECC;}
+/* DATA BOXES */
+.drow{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.dbox{background:#F4F5FC;border-radius:6px;padding:6px 9px;min-width:100px;flex:1;}
+.dl{font-size:7pt;color:#5A5A7A;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;}
+.dv{font-size:11pt;font-weight:bold;color:#1A1A2E;}
 
-  /* CHARTS */
-  .chart-box{margin-bottom:0.5rem;}
-  .chart-box img{width:100%;height:auto;display:block;}
-  .chart-title{font-size:10px;font-weight:700;color:#1A1A2E;margin-bottom:4px;}
-  .chart-note{font-size:8px;color:#5A5A7A;margin-top:3px;line-height:1.4;}
+/* FAMILY */
+.fam-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.fbox{background:#F4F5FC;border-radius:6px;padding:6px 10px;min-width:110px;}
+.fl{font-size:7pt;color:#5B2ECC;text-transform:uppercase;letter-spacing:0.05em;font-weight:bold;margin-bottom:2px;}
+.fv{font-size:11pt;font-weight:bold;color:#1A1A2E;}
+.fs{font-size:8pt;color:#5A5A7A;margin-top:1px;}
 
-  .sep{border:none;border-top:0.5px solid #D0D4EE;margin:0.4rem 0;}
+/* TABLES */
+table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:8.5pt;}
+th{background:#EEEDFE;color:#3C3489;font-weight:bold;font-size:7.5pt;text-transform:uppercase;letter-spacing:0.04em;padding:4px 7px;border:0.5px solid #C5CEF5;text-align:left;}
+td{padding:3.5px 7px;border:0.5px solid #D0D4EE;color:#1A1A2E;vertical-align:top;}
+tr:nth-child(even) td{background:#FAFAFA;}
+.edu-hdr td{background:#E1F0FF;font-weight:bold;color:#1A1A2E;font-size:8.5pt;}
+.tot td{background:#D8DFFB!important;font-weight:bold;color:#5B2ECC;border-color:#C5CEF5;}
 
-  /* METRICS */
-  .mgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:0.5rem;}
-  .mbox{background:#F4F5FC;border-radius:6px;padding:5px 7px;}
-  .mbox-hi{background:#D8DFFB;}
-  .mbox-label{font-size:7px;color:#5A5A7A;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;}
-  .mbox-val{font-size:12px;font-weight:700;color:#1A1A2E;}
-  .mbox-hi .mbox-val{color:#5B2ECC;}
-  .mbox-sub{font-size:7px;color:#5A5A7A;margin-top:1px;}
+/* CHART */
+.chart-box{margin-bottom:10px;}
+.chart-title{font-size:10pt;font-weight:bold;color:#1A1A2E;margin-bottom:5px;}
+.chart-box img{width:100%;height:auto;display:block;border:0.5px solid #eee;border-radius:4px;}
+.chart-note{font-size:7.5pt;color:#5A5A7A;margin-top:4px;line-height:1.4;}
 
-  /* FOOTER */
-  .footer{text-align:center;font-size:8px;color:#999;margin-top:0.5cm;border-top:0.5px solid #eee;padding-top:4px;}
+/* METRICS */
+.mgrid{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;}
+.mbox{background:#F4F5FC;border-radius:6px;padding:6px 9px;flex:1;min-width:90px;}
+.mbox-hi{background:#D8DFFB;}
+.ml{font-size:7pt;color:#5A5A7A;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;}
+.mv{font-size:12pt;font-weight:bold;color:#1A1A2E;}
+.mbox-hi .mv{color:#5B2ECC;}
+.ms{font-size:7pt;color:#5A5A7A;margin-top:1px;}
+
+/* FOOTER */
+.footer{text-align:center;font-size:7.5pt;color:#aaa;margin-top:16px;padding-top:6px;border-top:0.5px solid #eee;}
+
+hr{border:none;border-top:0.5px solid #D0D4EE;margin:10px 0;}
 </style>
 </head><body>
 
-<!-- ═══════════════ HOJA 1: DATOS ═══════════════ -->
+<!-- ══════════════════════════════════════════
+     HOJA 1 — DATOS DEL CLIENTE
+══════════════════════════════════════════ -->
 <div class="page">
   <div class="hdr">
     <img src="${logoSrc}" alt="Prospei"/>
     <div class="hdr-div"></div>
-    <div><div class="hdr-t">Análisis de necesidades y plan de acción</div><div class="hdr-s">Prospei Consultores Financieros</div></div>
+    <div><div class="hdr-title">Análisis de necesidades y plan de acción</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
   </div>
 
-  <div class="stitle">Familia</div>
-  <div class="dgrid">
-    <div class="dbox"><div class="dbox-label">Titular</div><div class="dbox-val">${titNombre}</div><div class="dbox-label" style="margin-top:3px">${titEdad} años</div></div>
-    ${parNombre ? '<div class="dbox"><div class="dbox-label">Pareja</div><div class="dbox-val">'+parNombre+'</div><div class="dbox-label" style="margin-top:3px">'+parEdad+' años</div></div>' : ''}
-    ${hijosHTML}
+  <div class="slabel">Familia</div>
+  ${famHtml}
+
+  <div class="slabel">Datos del análisis</div>
+  <div class="drow">
+    <div class="dbox"><div class="dl">Moneda</div><div class="dv">${cur}</div></div>
+    <div class="dbox"><div class="dl">Horizonte de análisis</div><div class="dv">${horizon} años</div></div>
+    <div class="dbox" style="flex:2"></div>
   </div>
 
-  <div class="stitle">Datos del análisis</div>
-  <div class="dgrid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="dbox"><div class="dbox-label">Moneda</div><div class="dbox-val">${document.getElementById('currency').value}</div></div>
-    <div class="dbox"><div class="dbox-label">Horizonte</div><div class="dbox-val">${document.getElementById('horizon').value} años</div></div>
+  <div class="slabel">Vivienda</div>
+  <div class="drow">
+    <div class="dbox" style="flex:1"><div class="dl">Valor de la propiedad (capital fijo)</div><div class="dv">${vivienda}</div></div>
+    <div class="dbox" style="flex:2;background:transparent"></div>
   </div>
 
-  <div class="stitle">Vivienda</div>
-  <div class="dgrid" style="grid-template-columns:1fr">
-    <div class="dbox"><div class="dbox-label">Valor de la propiedad (capital fijo)</div><div class="dbox-val">${vivienda}</div></div>
+  <div class="slabel">Gastos de mantenimiento</div>
+  <div class="drow">
+    <div class="dbox"><div class="dl">Gasto mensual</div><div class="dv">${mantM}</div></div>
+    <div class="dbox"><div class="dl">Años de cobertura</div><div class="dv">${mantA} años</div></div>
+    <div class="dbox" style="background:transparent"></div>
   </div>
 
-  <div class="stitle">Gastos de mantenimiento</div>
-  <div class="dgrid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="dbox"><div class="dbox-label">Gasto mensual</div><div class="dbox-val">${mantMens}</div></div>
-    <div class="dbox"><div class="dbox-label">Años de cobertura</div><div class="dbox-val">${mantAnios} años</div></div>
-  </div>
-
-  <div class="stitle">Educación</div>
+  <div class="slabel">Educación</div>
   <table>
-    <thead><tr><th>Hijo/a y etapa</th><th>Años que quedan</th><th>Cuota mensual</th><th>Total estimado</th></tr></thead>
-    <tbody>${eduHTML}</tbody>
+    <thead><tr><th>Etapa</th><th>Años que quedan</th><th>Cuota mensual</th></tr></thead>
+    <tbody>${eduHtml}</tbody>
   </table>
 
-  <div class="stitle">Eventos especiales</div>
-  ${evHTML ? '<table><thead><tr><th>Descripción</th><th>Monto</th><th>Año</th></tr></thead><tbody>'+evHTML+'</tbody></table>' : '<p style="font-size:9px;color:#999;margin-bottom:0.4rem">Sin eventos cargados</p>'}
+  <div class="slabel">Eventos especiales</div>
+  ${evHtml ? '<table><thead><tr><th>Descripción</th><th>Monto</th><th>Año</th></tr></thead><tbody>'+evHtml+'</tbody></table>' : '<p style="font-size:9pt;color:#999;margin-bottom:8px">Sin eventos cargados.</p>'}
 
-  <div class="stitle">Ingresos disponibles</div>
-  <div class="dgrid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="dbox"><div class="dbox-label">Ingreso mensual cónyuge</div><div class="dbox-val">${ingCon}</div></div>
-    <div class="dbox"><div class="dbox-label">Otros ingresos mensuales</div><div class="dbox-val">${ingOtros}</div></div>
+  <div class="slabel">Ingresos disponibles</div>
+  <div class="drow">
+    <div class="dbox"><div class="dl">Ingreso mensual cónyuge</div><div class="dv">${ingCon}</div></div>
+    <div class="dbox"><div class="dl">Otros ingresos mensuales</div><div class="dv">${ingOt}</div></div>
+    <div class="dbox" style="background:transparent"></div>
   </div>
 
-  <div class="footer">Prospei Consultores Financieros · Análisis de necesidades y plan de acción</div>
+  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de acción</div>
 </div>
 
-<!-- ═══════════════ HOJA 2: GRÁFICOS ANÁLISIS ═══════════════ -->
+<!-- ══════════════════════════════════════════
+     HOJA 2 — GRÁFICOS DE ANÁLISIS
+══════════════════════════════════════════ -->
 <div class="page">
   <div class="hdr">
     <img src="${logoSrc}" alt="Prospei"/>
     <div class="hdr-div"></div>
-    <div><div class="hdr-t">Análisis de necesidades — gráficos</div><div class="hdr-s">Prospei Consultores Financieros</div></div>
+    <div><div class="hdr-title">Análisis de necesidades — gráficos</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
   </div>
 
-  <div class="chart-box">
-    <div class="chart-title">Gastos por año — flujo anual de necesidades</div>
-    <img src="${imgAnual}" alt="Gastos anuales"/>
-  </div>
+  ${imgAnual ? '<div class="chart-box"><div class="chart-title">Gastos por año — flujo anual de necesidades</div><img src="'+imgAnual+'"/><div class="chart-note">Gastos anuales por categoría (mantenimiento, educación, eventos). La vivienda no aparece aquí por ser un capital fijo.</div></div>' : ''}
 
-  <div class="sep"></div>
+  <hr/>
 
-  <div class="chart-box">
-    <div class="chart-title">Necesidades netas por año — después de descontar ingresos del cónyuge</div>
-    <img src="${imgNeto}" alt="Necesidades netas"/>
-  </div>
+  ${imgNeto ? '<div class="chart-box"><div class="chart-title">Necesidades netas por año — descontando ingresos del cónyuge</div><img src="'+imgNeto+'"/><div class="chart-note">Lo que el seguro de vida debe cubrir cada año, una vez descontados los ingresos disponibles.</div></div>' : ''}
 
-  <div class="sep"></div>
+  <hr/>
 
-  <div class="chart-box">
-    <div class="chart-title">Necesidades acumuladas — capital requerido por año de inicio</div>
-    <img src="${imgNec}" alt="Necesidades acumuladas"/>
-    <div class="chart-note">Cada barra muestra el capital necesario si el evento ocurriese ese año: vivienda (base fija) + suma de gastos futuros desde ese año en adelante. La línea punteada muestra la necesidad neta descontando ingresos.</div>
-  </div>
+  ${imgNec ? '<div class="chart-box"><div class="chart-title">Necesidades acumuladas — capital requerido por año de inicio</div><img src="'+imgNec+'"/><div class="chart-note">Cada barra muestra el capital necesario si el evento ocurriese ese año. La línea punteada es la necesidad neta descontando ingresos.</div></div>' : ''}
 
-  <div class="footer">Prospei Consultores Financieros · Análisis de necesidades y plan de acción</div>
+  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de acción</div>
 </div>
 
-<!-- ═══════════════ HOJA 3: PLAN DE PROTECCIÓN ═══════════════ -->
+<!-- ══════════════════════════════════════════
+     HOJA 3 — PLAN DE PROTECCIÓN
+══════════════════════════════════════════ -->
 <div class="page">
   <div class="hdr">
     <img src="${logoSrc}" alt="Prospei"/>
     <div class="hdr-div"></div>
-    <div><div class="hdr-t">Plan de protección</div><div class="hdr-s">Prospei Consultores Financieros</div></div>
+    <div><div class="hdr-title">Plan de protección</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
   </div>
 
-  <div class="stitle">Cobertura propuesta</div>
-  <div class="dgrid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="dbox"><div class="dbox-label">Cobertura Vida Entera</div><div class="dbox-val">${cobVida}</div></div>
-    <div class="dbox"><div class="dbox-label">Renta Familiar — cuota anual</div><div class="dbox-val">${rentaCuota}</div></div>
-    <div class="dbox"><div class="dbox-label">Renta Familiar — años</div><div class="dbox-val">${rentaAnios} años</div></div>
+  <div class="slabel">Cobertura propuesta</div>
+  <div class="drow">
+    <div class="dbox"><div class="dl">Cobertura Vida Entera</div><div class="dv">${cobVida}</div></div>
+    <div class="dbox"><div class="dl">Renta Familiar — cuota anual</div><div class="dv">${rentaCuota}</div></div>
+    <div class="dbox"><div class="dl">Renta Familiar — años</div><div class="dv">${rentaAnios} años</div></div>
   </div>
 
-  <div class="stitle">Resumen del plan</div>
-  <div class="mgrid">${sumPlanHTML}</div>
+  <div class="slabel">Resumen del plan</div>
+  <div class="mgrid">${metricsHtml}</div>
 
-  <div class="chart-box">
-    <div class="chart-title">Necesidades vs. cobertura acumulada</div>
-    <img src="${imgPlan}" alt="Plan de protección"/>
-    <div class="chart-note">Rojo: necesidades acumuladas totales. Verde apilado: Vida Entera (base) + Renta Familiar + Ingresos del cónyuge. La línea punteada es la necesidad neta real. Cuando las barras verdes igualan o superan las rojas, el plan cubre todas las necesidades.</div>
-  </div>
+  ${imgPlan ? '<div class="chart-box"><div class="chart-title">Necesidades vs. cobertura acumulada</div><img src="'+imgPlan+'"/><div class="chart-note">Rojo: necesidades acumuladas totales. Verde apilado (base a tope): Vida Entera + Renta Familiar + Ingresos del cónyuge. Línea punteada: necesidad neta real.</div></div>' : ''}
 
-  <div class="footer">Prospei Consultores Financieros · Análisis de necesidades y plan de acción</div>
+  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de acción</div>
 </div>
 
+<script>window.onload=function(){window.print();}<\/script>
 </body></html>`);
-  win.document.close();
-  setTimeout(function(){ win.print(); }, 800);
+  W.document.close();
 }
-
-// --- CALCULAR ---
-var gCalc = null; // store last calc results globally
-
-function calcular() {
-  var horizon = parseInt(document.getElementById('horizon').value)||20;
-  var dMant = [], dEdu = [], dEv = [];
-  for (var i=0; i<horizon; i++) { dMant.push(0); dEdu.push(0); dEv.push(0); }
-
-  var vivMonto = document.getElementById('chkViv').checked ? (parseFloat(document.getElementById('propVal').value)||0) : 0;
-
-  // Mantenimiento
-  if (document.getElementById('chkMant').checked) {
-    var anual = (parseFloat(document.getElementById('mantMens').value)||0)*12;
-    var anios = parseInt(document.getElementById('mantAnios').value)||horizon;
-    var aj = parseFloat(document.getElementById('mantAj').value)/100||0;
-    for (var i=0; i<Math.min(anios,horizon); i++) dMant[i] = anual*Math.pow(1+aj,i);
-  }
-
-  // Educación
-  if (document.getElementById('chkEdu').checked) {
-    var eduDivs = document.querySelectorAll('[id^="eduhijo-"]');
-    for (var j=0; j<eduDivs.length; j++) {
-      var el = eduDivs[j];
-      var rows = el.querySelectorAll('.etapa-row');
-      var cursor = 0;
-      for (var k=0; k<rows.length; k++) {
-        var chk   = rows[k].querySelector('.etapa-chk');
-        var durEl = rows[k].querySelector('.etapa-dur');
-        var cosEl = rows[k].querySelector('.etapa-costo');
-        var duracion = parseInt(durEl.value)||0;
-        if (!chk.checked || duracion===0) continue;
-        var ca = (parseFloat(cosEl.value)||0)*11;
-        for (var d=0; d<duracion; d++) {
-          var yr = cursor+d;
-          if (yr<horizon) dEdu[yr] += ca;
-        }
-        cursor += duracion;
-      }
-    }
-  }
-
-  // Eventos
-  if (document.getElementById('chkEv').checked) {
-    var evDivs = document.querySelectorAll('[id^="evento-"]');
-    for (var j=0; j<evDivs.length; j++) {
-      var el = evDivs[j];
-      var m = parseFloat(el.querySelector('.ev-monto').value)||0;
-      var a = parseInt(el.querySelector('.ev-anio').value)||1;
-      if (a-1<horizon) dEv[a-1] += m;
-    }
-  }
-
-  var totMant=0,totEdu=0,totEv=0;
-  for (var i=0;i<horizon;i++){totMant+=dMant[i];totEdu+=dEdu[i];totEv+=dEv[i];}
-  var gran = vivMonto+totMant+totEdu+totEv;
-
-  // Sufijos para necesidades acumuladas
-  var necMant=[],necEdu=[],necEv=[];
-  for (var i=0;i<horizon;i++){necMant.push(0);necEdu.push(0);necEv.push(0);}
-  for (var i=horizon-1;i>=0;i--) {
-    necMant[i] = (i<horizon-1?necMant[i+1]:0)+dMant[i];
-    necEdu[i]  = (i<horizon-1?necEdu[i+1]:0)+dEdu[i];
-    necEv[i]   = (i<horizon-1?necEv[i+1]:0)+dEv[i];
-  }
-
-  var yLabels = [];
-  for (var i=0;i<horizon;i++) yLabels.push('Año '+(i+1));
-
-  // Summary
-  var cap1 = vivMonto+necMant[0]+necEdu[0]+necEv[0];
-  var sg = document.getElementById('sum-grid');
-  sg.innerHTML =
-    mkMetric('Capital necesario (año 1)', fmtF(cap1), 'máxima cobertura', null, true)+
-    mkMetric('Vivienda', fmt(vivMonto), '', C.viv, false)+
-    mkMetric('Mantenimiento', fmt(totMant), '', C.mant, false)+
-    mkMetric('Educación', fmt(totEdu), '', C.edu, false)+
-    mkMetric('Eventos', fmt(totEv), '', C.ev, false);
-
-  document.getElementById('legend').innerHTML =
-    mkLeg('Vivienda (base fija)', C.viv)+
-    mkLeg('Mantenimiento', C.mant)+
-    mkLeg('Educación', C.edu)+
-    mkLeg('Eventos especiales', C.ev);
-
-  // Destroy old charts
-  if (charts.anual) { charts.anual.destroy(); charts.anual=null; }
-  if (charts.neto)  { charts.neto.destroy();  charts.neto=null; }
-  if (charts.nec)   { charts.nec.destroy();   charts.nec=null; }
-
-  // Chart 1: anual - barras apiladas de gastos + línea de brecha neta
-  var ctx1 = document.getElementById('chartAnual').getContext('2d');
-  charts.anual = new Chart(ctx1, {
-    type:'bar',
-    data:{ labels:yLabels, datasets:[
-      {label:'Mantenimiento',data:dMant,backgroundColor:C.mant,stack:'s',order:2},
-      {label:'Educación',    data:dEdu, backgroundColor:C.edu, stack:'s',order:2},
-      {label:'Eventos',      data:dEv,  backgroundColor:C.ev,  stack:'s',order:2},
-      {label:'Necesidad neta (desc. ingresos)', data:brechaAnual,
-       type:'line', borderColor:'#1A1A2E', backgroundColor:'transparent',
-       borderWidth:2, borderDash:[4,3], pointRadius:2, tension:0.3, order:1}
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:true, position:'top', labels:{font:{size:11},boxWidth:12,padding:14}},
-                tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);}}}},
-      scales:{ x:{stacked:true,ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
-               y:{stacked:true,ticks:{callback:function(v){return fmt(v);},font:{size:11}}} }
-    }
-  });
-
-  // Chart 3: necesidades acumuladas con ingresos superpuestos + línea necesidad neta
-  var vivArr = [];
-  for (var i=0;i<horizon;i++) vivArr.push(vivMonto);
-
-  // Ingresos acumulados futuros desde año i (capped at total need)
-  var ingAcum = [];
-  for (var i=0; i<horizon; i++) {
-    var aniosIng = Math.max(0, Math.min(mantAniosVal, horizon) - i);
-    var totalNec = vivMonto + necMant[i] + necEdu[i] + necEv[i];
-    ingAcum.push(Math.min(ingAnual * aniosIng, totalNec));
-  }
-
-  var ctx2 = document.getElementById('chartNec').getContext('2d');
-  charts.nec = new Chart(ctx2, {
-    type: 'bar',
-    data: { labels: yLabels, datasets: [
-      {label:'Vivienda',      data:vivArr,  backgroundColor:C.viv,  stack:'s', order:2},
-      {label:'Mantenimiento', data:necMant, backgroundColor:C.mant, stack:'s', order:2},
-      {label:'Educación',     data:necEdu,  backgroundColor:C.edu,  stack:'s', order:2},
-      {label:'Eventos',       data:necEv,   backgroundColor:C.ev,   stack:'s', order:2},
-      {label:'Cubierto por ingresos',
-       data: ingAcum,
-       backgroundColor:'rgba(255,255,255,0.50)',
-       borderColor:'rgba(255,255,255,0.8)',
-       borderWidth:1,
-       stack:'s', order:1},
-      {label:'Necesidad neta',
-       data: brechaAcum,
-       type:'line',
-       borderColor:'#1A1A2E',
-       backgroundColor:'transparent',
-       borderWidth:2.5,
-       borderDash:[5,3],
-       pointRadius:2,
-       tension:0.2,
-       order:0}
-    ]},
-    options: { responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:true, position:'top', labels:{font:{size:11},boxWidth:12,padding:14}},
-        tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);}}}
-      },
-      scales:{
-        x:{stacked:true, ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
-        y:{stacked:true, ticks:{callback:function(v){return fmt(v);},font:{size:11}},
-           title:{display:true,text:'Capital necesario',font:{size:11},color:'#5A5A7A'}}
-      }
-    }
-  });
-
-  // Tables
-  buildTable1(yLabels, dMant, dEdu, dEv, horizon);
-  buildTable2(yLabels, vivMonto, necMant, necEdu, necEv, horizon);
-
-  // Ingresos conyuge - aplica solo durante años de mantenimiento
-  var mantAniosVal = parseInt(document.getElementById('mantAnios').value)||horizon;
-  var ingMens = 0;
-  if (document.getElementById('chkIng').checked) {
-    ingMens = (parseFloat(document.getElementById('ingConyuge').value)||0) +
-              (parseFloat(document.getElementById('ingOtros').value)||0);
-  }
-  var ingAnual = ingMens * 12;
-
-  // Brecha anual neta (año a año)
-  var brechaAnual = [];
-  for (var i=0; i<horizon; i++) {
-    var nec = dMant[i] + dEdu[i] + dEv[i];
-    var ing = (i < mantAniosVal) ? ingAnual : 0;
-    brechaAnual.push(Math.max(0, nec - ing));
-  }
-
-  // Brecha acumulada neta (sufijo sum de brechaAnual + vivienda fija)
-  var brechaAcum = [];
-  for (var i=0; i<horizon; i++) {
-    var necAcum = vivMonto + necMant[i] + necEdu[i] + necEv[i];
-    var ingFut = 0;
-    for (var j=i; j<Math.min(mantAniosVal, horizon); j++) ingFut += ingAnual;
-    brechaAcum.push(Math.max(0, necAcum - ingFut));
-  }
-
-  // Chart 2: necesidades NETAS por año (barras recortadas por ingresos)
-  // Cada barra muestra solo lo que queda a cubrir con seguro (brecha real)
-  // Desglosamos la brecha por categoría proporcionalmente
-  var netaMant = [], netaEdu = [], netaEv = [], netaVivAnual = [];
-  for (var i = 0; i < horizon; i++) {
-    var bruta = dMant[i] + dEdu[i] + dEv[i];
-    var ing   = (i < mantAniosVal) ? ingAnual : 0;
-    var neta  = Math.max(0, bruta - ing);
-    // distribute neta proportionally across categories
-    if (bruta > 0) {
-      netaMant.push(dMant[i] / bruta * neta);
-      netaEdu.push(dEdu[i]  / bruta * neta);
-      netaEv.push(dEv[i]    / bruta * neta);
-    } else {
-      netaMant.push(0); netaEdu.push(0); netaEv.push(0);
-    }
-  }
-
-  if (charts.neto) { charts.neto.destroy(); charts.neto = null; }
-  var ctxN = document.getElementById('chartNeto').getContext('2d');
-  charts.neto = new Chart(ctxN, {
-    type: 'bar',
-    data: { labels: yLabels, datasets: [
-      {label:'Mantenimiento', data:netaMant, backgroundColor:C.mant, stack:'s'},
-      {label:'Educación',     data:netaEdu,  backgroundColor:C.edu,  stack:'s'},
-      {label:'Eventos',       data:netaEv,   backgroundColor:C.ev,   stack:'s'}
-    ]},
-    options: { responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:true, position:'top', labels:{font:{size:11},boxWidth:12,padding:14}},
-        tooltip:{callbacks:{
-          label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);},
-          afterBody:function(items){
-            var i=items[0].dataIndex;
-            return 'Total neto: '+fmtF(brechaAnual[i]);
-          }
-        }}
-      },
-      scales:{
-        x:{stacked:true, ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
-        y:{stacked:true, ticks:{callback:function(v){return fmt(v);},font:{size:11}}}
-      }
-    }
-  });
-
-  // Table for neto chart
-  buildNetoTable(yLabels, netaMant, netaEdu, netaEv, brechaAnual, horizon);
-
-  // Store globally for plan calc
-  gCalc = { horizon:horizon, dMant:dMant, dEdu:dEdu, dEv:dEv, vivMonto:vivMonto,
-            necMant:necMant, necEdu:necEdu, necEv:necEv, yLabels:yLabels,
-            ingAnual:ingAnual, mantAniosVal:mantAniosVal,
-            brechaAnual:brechaAnual, brechaAcum:brechaAcum };
-
-  document.getElementById('results').classList.remove('hidden');
-  document.getElementById('sec-plan').classList.remove('hidden');
-  document.getElementById('results-plan').classList.add('hidden');
-  document.getElementById('results').scrollIntoView({behavior:'smooth'});
-}
-
 
 function calcPlan() {
   if (!gCalc) { alert('Primero calculá el análisis de necesidades.'); return; }
