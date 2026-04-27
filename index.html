@@ -107,12 +107,71 @@
     .site-footer { text-align: center; padding: 2rem 1.5rem; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); background: var(--white); margin-top: 2rem; }
 
     @media print {
-      .accent-bar, .site-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .calc-btn, .pdf-btn, .add-btn, .remove-btn, .tbl-toggle, .toggle-row { display: none !important; }
-      .tbl-wrap { display: block !important; }
-      .hidden { display: block !important; }
-      body { background: white; }
-      @page { margin: 1.5cm; size: A4 landscape; }
+      /* Force colors */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+      /* Page setup */
+      @page { margin: 1cm 1.2cm; size: A4 portrait; }
+      @page :first { margin-top: 0.5cm; }
+
+      /* Hide interactive elements */
+      .calc-btn, .pdf-btn, .add-btn, .remove-btn,
+      .tbl-toggle, .toggle-row, .site-footer,
+      #sec-plan, #sec-viv, #sec-mant, #sec-edu, #sec-ev, #sec-ing,
+      .section-label .sec-dot { display: none !important; }
+
+      /* Reset layout */
+      body { background: white !important; font-size: 11px; }
+      .main { max-width: 100% !important; padding: 0.3cm 0 !important; }
+      .site-header { padding: 0.6rem 0 0.8rem !important; }
+      .header-inner { max-width: 100% !important; padding: 0 0.5cm !important; }
+      .header-logo { height: 50px !important; }
+      .header-title { font-size: 18px !important; }
+
+      /* Cards compact */
+      .card { padding: 0.5rem 0.7rem !important; box-shadow: none !important; margin-bottom: 0.4rem !important; border: 0.5px solid #ddd !important; }
+      .card-inner { padding: 0.4rem 0.6rem !important; }
+      .section { margin-bottom: 0.5rem !important; }
+
+      /* Show tables that were hidden */
+      .tbl-wrap { display: block !important; overflow: visible !important; }
+      .data-table { font-size: 9px !important; }
+      .data-table th, .data-table td { padding: 3px 5px !important; }
+
+      /* PAGE BREAK CONTROL */
+      /* Page 1: header + form sections + 3 charts */
+      #results { page-break-before: avoid !important; }
+      #results .card { page-break-inside: avoid; }
+
+      /* Chart sizes for print */
+      .chart-wrap { height: 180px !important; }
+      .chart-wrap canvas { max-height: 180px !important; }
+      .chart-heading { font-size: 11px !important; font-weight: 600; margin-bottom: 4px !important; }
+      .chart-note { font-size: 9px !important; margin-top: 4px !important; }
+      .sep { margin: 0.4rem 0 !important; }
+
+      /* Metrics grid compact */
+      .summary-grid { gap: 6px !important; margin-bottom: 0.5rem !important; }
+      .metric { padding: 0.4rem 0.6rem !important; }
+      .metric-val { font-size: 14px !important; }
+      .metric-label { font-size: 9px !important; }
+
+      /* Legend compact */
+      .legend { gap: 8px !important; margin-bottom: 6px !important; }
+      .legend-item { font-size: 9px !important; }
+
+      /* Page 2: plan de proteccion */
+      #sec-plan { display: block !important; page-break-before: always !important; }
+      #results-plan { page-break-before: avoid !important; }
+      #results-plan .card { page-break-inside: avoid; }
+
+      /* Hide form inputs visually but keep their labels readable */
+      input, select { border: none !important; background: transparent !important; padding: 0 !important; font-size: 11px !important; }
+
+      /* Familia grid print */
+      .familia-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
+      .persona-card { padding: 0.4rem !important; }
+      .persona-avatar { width: 22px !important; height: 22px !important; font-size: 10px !important; margin-bottom: 4px !important; }
     }
     @media (max-width: 520px) {
       .header-inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
@@ -592,15 +651,17 @@ function togTbl(id, btn) {
 }
 
 function exportPDF() {
-  document.getElementById('tw1').classList.remove('hidden');
-  document.getElementById('tw2').classList.remove('hidden');
+  // Show all tables
+  document.querySelectorAll('.tbl-wrap').forEach(function(el){ el.classList.remove('hidden'); });
   document.querySelectorAll('.tbl-toggle').forEach(function(b){ b.style.visibility='hidden'; });
+  // Make sure plan section is visible if calculated
+  if (gCalc) { document.getElementById('sec-plan').classList.remove('hidden'); }
   setTimeout(function(){
     window.print();
     setTimeout(function(){
       document.querySelectorAll('.tbl-toggle').forEach(function(b){ b.style.visibility=''; });
     }, 2000);
-  }, 500);
+  }, 600);
 }
 
 // --- CALCULAR ---
