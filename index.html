@@ -443,19 +443,22 @@
           proyectos de familia — y a cambio, solo te ocupás de una pequeña cuota mensual.
         </p>
 
-        <div style="display:flex;gap:10px;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
-          <div class="field" style="max-width:220px">
-            <label>Prima / cuota mensual del plan</label>
-            <input type="number" id="primaMensual" placeholder="Ej: 350" oninput="dibujarAnalogia()" />
-          </div>
+        <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:1rem;flex-wrap:wrap">
           <div class="field" style="max-width:200px">
+            <label>Prima / cuota mensual del plan</label>
+            <input type="number" id="primaMensual" placeholder="Ej: 350" />
+          </div>
+          <div class="field" style="max-width:160px">
             <label>Moneda</label>
-            <select id="primaMoneda" onchange="dibujarAnalogia()">
+            <select id="primaMoneda">
               <option value="USD">USD $</option>
               <option value="ARS" selected>ARS $</option>
               <option value="EUR">EUR €</option>
             </select>
           </div>
+          <button class="calc-btn" style="margin:0;padding:10px 20px;font-size:13px" onclick="dibujarAnalogia()">
+            Generar ilustración ↗
+          </button>
         </div>
 
         <div id="analogia-canvas" style="width:100%;overflow:hidden;border-radius:var(--r-md);background:linear-gradient(135deg,#F4F5FC 0%,#EEEDFE 100%);padding:1rem 0">
@@ -723,536 +726,202 @@ function togTbl(id, btn) {
 function exportPDF() {
   if (!gCalc) { alert('Primero calculá el análisis de necesidades.'); return; }
 
-  // Capture charts as images at high resolution
-  var imgAnual = document.getElementById('chartAnual') ? document.getElementById('chartAnual').toDataURL('image/png', 1.0) : null;
-  
-  // Make sure analogy is drawn first
+  // 1. Ensure analogy is drawn
   if (typeof dibujarAnalogia === 'function') { dibujarAnalogia(); }
-  
-  // Capture SVG analogy as inline SVG string (works cross-browser)
-  var svgAnalogia = '';
-  var svgEl = document.getElementById('svg-analogia');
-  if (svgEl) {
-    // Set explicit dimensions on viewBox SVG for print
-    var svgClone = svgEl.cloneNode(true);
-    svgClone.setAttribute('width', '100%');
-    svgClone.setAttribute('height', 'auto');
-    svgClone.style.display = 'block';
-    svgClone.style.maxWidth = '100%';
-    svgAnalogia = svgClone.outerHTML || new XMLSerializer().serializeToString(svgClone);
+
+  // 2. Capture all chart canvases as PNG data URLs
+  function capImg(id) {
+    var el = document.getElementById(id);
+    return (el && el.tagName === 'CANVAS') ? el.toDataURL('image/png', 1.0) : '';
   }
-  var imgAnalogia = null; // not used but kept for compatibility
-  var imgNeto  = document.getElementById('chartNeto')  ? document.getElementById('chartNeto').toDataURL('image/png', 1.0)  : null;
-  var imgNec   = document.getElementById('chartNec')   ? document.getElementById('chartNec').toDataURL('image/png', 1.0)   : null;
-  var imgPlan  = document.getElementById('chartPlan')  ? document.getElementById('chartPlan').toDataURL('image/png', 1.0)  : null;
+  var imgAnual = capImg('chartAnual');
+  var imgNeto  = capImg('chartNeto');
+  var imgNec   = capImg('chartNec');
+  var imgPlan  = capImg('chartPlan');
 
-  var logoSrc  = document.querySelector('.header-logo') ? document.querySelector('.header-logo').src : '';
+  // 3. Capture SVG analogy as inline SVG
+  var svgStr = '';
+  var svgEl  = document.getElementById('svg-analogia');
+  if (svgEl && svgEl.children.length > 0) {
+    svgEl.setAttribute('width',  '100%');
+    svgEl.setAttribute('height', 'auto');
+    svgStr = new XMLSerializer().serializeToString(svgEl);
+  }
 
-  // Collect data
+  // 4. Collect all form data
+  var logoSrc   = (document.querySelector('.header-logo') || {}).src || '';
   var titNombre = document.getElementById('titNombre').value || '-';
   var titEdad   = document.getElementById('titEdad').value   || '-';
   var parNombre = document.getElementById('parNombre').value || '';
   var parEdad   = document.getElementById('parEdad').value   || '';
+  var cur       = document.getElementById('currency').value;
+  var horizon   = document.getElementById('horizon').value;
+  var vivienda  = document.getElementById('chkViv').checked  ? fmtF(parseFloat(document.getElementById('propVal').value)||0)   : '-';
+  var mantM     = document.getElementById('chkMant').checked ? fmtF(parseFloat(document.getElementById('mantMens').value)||0)  : '-';
+  var mantA     = document.getElementById('mantAnios').value;
+  var ingCon    = fmtF(parseFloat(document.getElementById('ingConyuge').value)||0);
+  var ingOt     = fmtF(parseFloat(document.getElementById('ingOtros').value)||0);
+  var cobVida   = fmtF(parseFloat(document.getElementById('cobVida').value)||0);
+  var rentaCuota= fmtF(parseFloat(document.getElementById('rentaCuota').value)||0);
+  var rentaAnios= document.getElementById('rentaAnios').value;
+  var primaVal  = document.getElementById('primaMensual') ? (document.getElementById('primaMensual').value||'') : '';
+  var primaSym  = (document.getElementById('primaMoneda') && document.getElementById('primaMoneda').value==='EUR') ? '€' : '$';
+  var primaStr  = primaVal ? primaSym+parseFloat(primaVal).toLocaleString('es-AR')+'/mes' : '';
 
-  var hijos = [];
+  // Hijos familia
+  var hijosHTML = '';
   document.querySelectorAll('[id^="hijofam-"]').forEach(function(el) {
     var num = el.id.split('-')[1];
-    var n = document.getElementById('hf'+num+'Nombre') ? document.getElementById('hf'+num+'Nombre').value : '';
-    var e = document.getElementById('hf'+num+'Edad')   ? document.getElementById('hf'+num+'Edad').value   : '';
-    if (n) hijos.push({nombre:n, edad:e});
+    var n = (document.getElementById('hf'+num+'Nombre')||{}).value || '';
+    var e = (document.getElementById('hf'+num+'Edad')||{}).value   || '';
+    var s = (document.getElementById('hf'+num+'Sexo')||{}).value   || '';
+    if (n) hijosHTML += '<div class="fbox"><div class="fl">Hijo/a</div><div class="fv">'+n+'</div><div class="fs">'+e+' años</div></div>';
   });
 
-  var cur      = document.getElementById('currency').value;
-  var horizon  = document.getElementById('horizon').value;
-  var vivienda = document.getElementById('chkViv').checked ? fmtF(parseFloat(document.getElementById('propVal').value)||0) : '-';
-  var mantM    = document.getElementById('chkMant').checked ? fmtF(parseFloat(document.getElementById('mantMens').value)||0) : '-';
-  var mantA    = document.getElementById('mantAnios').value;
-  var ingCon   = fmtF(parseFloat(document.getElementById('ingConyuge').value)||0);
-  var ingOt    = fmtF(parseFloat(document.getElementById('ingOtros').value)||0);
-
-  var eduRows = [];
+  // Educacion
+  var eduHTML = '';
   document.querySelectorAll('[id^="eduhijo-"]').forEach(function(ed) {
-    var famId = ed.dataset.famid;
-    var num = famId ? famId.split('-')[1] : '';
-    var nombre = (document.getElementById('hf'+num+'Nombre') ? document.getElementById('hf'+num+'Nombre').value : '') || 'Hijo/a';
-    var edad   = (document.getElementById('hf'+num+'Edad')   ? document.getElementById('hf'+num+'Edad').value   : '') || '';
-    var etapas = [];
+    var fid = ed.dataset.famid;
+    var num = fid ? fid.split('-')[1] : '';
+    var nombre = ((document.getElementById('hf'+num+'Nombre')||{}).value||'Hijo/a');
+    var edad   = ((document.getElementById('hf'+num+'Edad')||{}).value||'');
+    eduHTML += '<tr class="edu-hdr"><td colspan="2">'+nombre+' · '+edad+' años</td></tr>';
     ed.querySelectorAll('.etapa-row').forEach(function(row) {
       var chk = row.querySelector('.etapa-chk');
-      if (chk && chk.checked) {
-        var lbl   = row.querySelector('.etapa-label') ? row.querySelector('.etapa-label').value : '';
-        var dur   = row.querySelector('.etapa-dur')   ? row.querySelector('.etapa-dur').value   : '0';
-        var costo = row.querySelector('.etapa-costo') ? row.querySelector('.etapa-costo').value : '0';
-        if (parseInt(dur) > 0) etapas.push({lbl:lbl, dur:dur, costo:fmtF(parseFloat(costo)||0)});
-      }
-    });
-    if (etapas.length) eduRows.push({nombre:nombre, edad:edad, etapas:etapas});
-  });
-
-  var eventos = [];
-  document.querySelectorAll('[id^="evento-"]').forEach(function(ev) {
-    var desc  = ev.querySelector('.ev-desc')  ? ev.querySelector('.ev-desc').value  : '';
-    var monto = ev.querySelector('.ev-monto') ? ev.querySelector('.ev-monto').value : '';
-    var anio  = ev.querySelector('.ev-anio')  ? ev.querySelector('.ev-anio').value  : '';
-    if (monto) eventos.push({desc:desc||'Evento', monto:fmtF(parseFloat(monto)||0), anio:anio});
-  });
-
-  var cobVida    = fmtF(parseFloat(document.getElementById('cobVida').value)||0);
-  var rentaCuota = fmtF(parseFloat(document.getElementById('rentaCuota').value)||0);
-  var rentaAnios = document.getElementById('rentaAnios').value;
-
-  // Analogy data
-  var primaVal   = document.getElementById('primaMensual') ? (document.getElementById('primaMensual').value || '') : '';
-  var primaSym   = document.getElementById('primaMoneda')  ? (document.getElementById('primaMoneda').value === 'EUR' ? '€' : '$') : '$';
-  var primaStr   = primaVal ? primaSym + parseFloat(primaVal).toLocaleString('es-AR') + '/mes' : '';
-  var titSexoVal = document.getElementById('titSexo')  ? document.getElementById('titSexo').value  : 'M';
-  var parSexoVal = document.getElementById('parSexo')  ? document.getElementById('parSexo').value  : 'F';
-  var hijosAnalogia = [];
-  document.querySelectorAll('[id^="hijofam-"]').forEach(function(el) {
-    var num = el.id.split('-')[1];
-    var n   = document.getElementById('hf'+num+'Nombre') ? document.getElementById('hf'+num+'Nombre').value.split(' ')[0] : '';
-    var sx  = document.getElementById('hf'+num+'Sexo')   ? document.getElementById('hf'+num+'Sexo').value   : 'M';
-    if (n) hijosAnalogia.push({nombre:n, sexo:sx});
-  });
-
-  // Need total for stone label
-  var needTotalStr = gCalc ? fmtF(gCalc.vivMonto+(gCalc.necMant[0]||0)+(gCalc.necEdu[0]||0)+(gCalc.necEv[0]||0)) : '';
-
-  // Build metrics HTML for plan summary
-  var sumPlan = document.getElementById('sum-plan');
-  var metrics = [];
-  if (sumPlan) {
-    sumPlan.querySelectorAll('.metric').forEach(function(m) {
-      var lbl = m.querySelector('.metric-label') ? m.querySelector('.metric-label').textContent : '';
-      var val = m.querySelector('.metric-val')   ? m.querySelector('.metric-val').textContent   : '';
-      var sub = m.querySelector('.metric-sub')   ? m.querySelector('.metric-sub').textContent   : '';
-      metrics.push({lbl:lbl, val:val, sub:sub, hi:m.classList.contains('metric-hi')});
-    });
-  }
-
-  // Build print window
-  var W = window.open('', '_blank', 'width=900,height=700');
-  if (!W) { alert('Por favor permitir popups para exportar el PDF.'); return; }
-
-  var metricsHtml = metrics.map(function(m) {
-    return '<div class="mbox'+(m.hi?' mbox-hi':'')+'"><div class="ml">'+m.lbl+'</div><div class="mv">'+m.val+'</div>'+(m.sub?'<div class="ms">'+m.sub+'</div>':'')+'</div>';
-  }).join('');
-
-  var famHtml = '<div class="fam-grid">';
-  famHtml += '<div class="fbox"><div class="fl">Titular</div><div class="fv">'+titNombre+'</div><div class="fs">'+titEdad+' años</div></div>';
-  if (parNombre) famHtml += '<div class="fbox"><div class="fl">Pareja</div><div class="fv">'+parNombre+'</div><div class="fs">'+parEdad+' años</div></div>';
-  hijos.forEach(function(h) { famHtml += '<div class="fbox"><div class="fl">Hijo/a</div><div class="fv">'+h.nombre+'</div><div class="fs">'+h.edad+' años</div></div>'; });
-  famHtml += '</div>';
-
-  var eduHtml = '';
-  eduRows.forEach(function(e) {
-    eduHtml += '<tr class="edu-hdr"><td colspan="3">'+e.nombre+' · '+e.edad+' años</td></tr>';
-    e.etapas.forEach(function(et) {
-      eduHtml += '<tr><td style="padding-left:12px">'+et.lbl+'</td><td>'+et.dur+' años</td><td>'+et.costo+'/mes</td></tr>';
+      if (!chk || !chk.checked) return;
+      var lbl = (row.querySelector('.etapa-label')||{}).value || '';
+      var dur = (row.querySelector('.etapa-dur')||{}).value   || '';
+      var cos = (row.querySelector('.etapa-costo')||{}).value || '';
+      if (parseInt(dur)>0) eduHTML += '<tr><td style="padding-left:12px">'+lbl+'</td><td>'+dur+' años &nbsp; '+fmtF(parseFloat(cos)||0)+'/mes</td></tr>';
     });
   });
-
-  var evHtml = eventos.map(function(e) {
-    return '<tr><td>'+e.desc+'</td><td>'+e.monto+'</td><td>Año '+e.anio+'</td></tr>';
-  }).join('');
-
-  W.document.write(`<!DOCTYPE html><html lang="es"><head>
-<meta charset="UTF-8">
-<title>Prospei — Análisis de necesidades</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-@page{size:A4 portrait;margin:1.5cm 1.8cm;}
-body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#1A1A2E;background:white;}
-
-/* PAGE BREAKS */
-.page{page-break-after:always;}
-.page:last-child{page-break-after:avoid;}
-
-/* HEADER */
-.hdr{display:flex;align-items:center;gap:14px;padding-bottom:10px;border-bottom:3px solid #5B2ECC;margin-bottom:14px;}
-.hdr img{height:46px;width:auto;flex-shrink:0;}
-.hdr-div{width:1px;height:38px;background:#D0D4EE;flex-shrink:0;}
-.hdr-title{font-size:17pt;font-weight:bold;color:#1A1A2E;line-height:1.2;}
-.hdr-sub{font-size:8pt;color:#5A5A7A;margin-top:2px;}
-
-/* SECTION LABEL */
-.slabel{font-size:8pt;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#5B2ECC;margin:12px 0 6px;border-left:3px solid #5B2ECC;padding-left:7px;}
-
-/* DATA BOXES */
-.drow{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
-.dbox{background:#F4F5FC;border-radius:6px;padding:6px 9px;min-width:100px;flex:1;}
-.dl{font-size:7pt;color:#5A5A7A;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;}
-.dv{font-size:11pt;font-weight:bold;color:#1A1A2E;}
-
-/* FAMILY */
-.fam-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
-.fbox{background:#F4F5FC;border-radius:6px;padding:6px 10px;min-width:110px;}
-.fl{font-size:7pt;color:#5B2ECC;text-transform:uppercase;letter-spacing:0.05em;font-weight:bold;margin-bottom:2px;}
-.fv{font-size:11pt;font-weight:bold;color:#1A1A2E;}
-.fs{font-size:8pt;color:#5A5A7A;margin-top:1px;}
-
-/* TABLES */
-table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:8.5pt;}
-th{background:#EEEDFE;color:#3C3489;font-weight:bold;font-size:7.5pt;text-transform:uppercase;letter-spacing:0.04em;padding:4px 7px;border:0.5px solid #C5CEF5;text-align:left;}
-td{padding:3.5px 7px;border:0.5px solid #D0D4EE;color:#1A1A2E;vertical-align:top;}
-tr:nth-child(even) td{background:#FAFAFA;}
-.edu-hdr td{background:#E1F0FF;font-weight:bold;color:#1A1A2E;font-size:8.5pt;}
-.tot td{background:#D8DFFB!important;font-weight:bold;color:#5B2ECC;border-color:#C5CEF5;}
-
-/* CHART */
-.chart-box{margin-bottom:10px;}
-.chart-title{font-size:10pt;font-weight:bold;color:#1A1A2E;margin-bottom:5px;}
-.chart-box img{width:100%;height:auto;display:block;border:0.5px solid #eee;border-radius:4px;}
-.chart-note{font-size:7.5pt;color:#5A5A7A;margin-top:4px;line-height:1.4;}
-
-/* METRICS */
-.mgrid{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;}
-.mbox{background:#F4F5FC;border-radius:6px;padding:6px 9px;flex:1;min-width:90px;}
-.mbox-hi{background:#D8DFFB;}
-.ml{font-size:7pt;color:#5A5A7A;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;}
-.mv{font-size:12pt;font-weight:bold;color:#1A1A2E;}
-.mbox-hi .mv{color:#5B2ECC;}
-.ms{font-size:7pt;color:#5A5A7A;margin-top:1px;}
-
-/* FOOTER */
-.footer{text-align:center;font-size:7.5pt;color:#aaa;margin-top:16px;padding-top:6px;border-top:0.5px solid #eee;}
-
-hr{border:none;border-top:0.5px solid #D0D4EE;margin:10px 0;}
-</style>
-</head><body>
-
-<!-- ══════════════════════════════════════════
-     HOJA 1 — DATOS DEL CLIENTE
-══════════════════════════════════════════ -->
-<div class="page">
-  <div class="hdr">
-    <img src="${logoSrc}" alt="Prospei"/>
-    <div class="hdr-div"></div>
-    <div><div class="hdr-title">Análisis de necesidades y plan de protección familiar</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
-  </div>
-
-  <div class="slabel">Familia</div>
-  ${famHtml}
-
-  <div class="slabel">Tu horizonte de protección</div>
-  <div class="drow">
-    <div class="dbox"><div class="dl">Moneda</div><div class="dv">${cur}</div></div>
-    <div class="dbox"><div class="dl">Horizonte de análisis</div><div class="dv">${horizon} años</div></div>
-    <div class="dbox" style="flex:2"></div>
-  </div>
-
-  <div class="slabel">El hogar de tu familia</div>
-  <div class="drow">
-    <div class="dbox" style="flex:1"><div class="dl">Valor de la propiedad (capital fijo)</div><div class="dv">${vivienda}</div></div>
-    <div class="dbox" style="flex:2;background:transparent"></div>
-  </div>
-
-  <div class="slabel">El ritmo de vida de tu familia</div>
-  <div class="drow">
-    <div class="dbox"><div class="dl">Gasto mensual</div><div class="dv">${mantM}</div></div>
-    <div class="dbox"><div class="dl">Años que tu familia necesita ese ingreso</div><div class="dv">${mantA} años</div></div>
-    <div class="dbox" style="background:transparent"></div>
-  </div>
-
-  <div class="slabel">El futuro de tus hijos</div>
-  <table>
-    <thead><tr><th>Etapa</th><th>Años restantes</th><th>Cuota mensual estimada</th></tr></thead>
-    <tbody>${eduHtml}</tbody>
-  </table>
-
-  <div class="slabel">Los momentos que querés garantizar</div>
-  ${evHtml ? '<table><thead><tr><th>Descripción</th><th>Monto</th><th>Año</th></tr></thead><tbody>'+evHtml+'</tbody></table>' : '<p style="font-size:9pt;color:#999;margin-bottom:8px">Sin eventos cargados.</p>'}
-
-  <div class="slabel">Lo que aportaría tu pareja</div>
-  <div class="drow">
-    <div class="dbox"><div class="dl">Ingreso mensual cónyuge</div><div class="dv">${ingCon}</div></div>
-    <div class="dbox"><div class="dl">Otros ingresos mensuales</div><div class="dv">${ingOt}</div></div>
-    <div class="dbox" style="background:transparent"></div>
-  </div>
-
-  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de protección familiar</div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     HOJA 2 — GRÁFICOS DE ANÁLISIS
-══════════════════════════════════════════ -->
-<div class="page">
-  <div class="hdr">
-    <img src="${logoSrc}" alt="Prospei"/>
-    <div class="hdr-div"></div>
-    <div><div class="hdr-title">Tu análisis de protección familiar — gráficos</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
-  </div>
-
-  ${imgAnual ? '<div class="chart-box"><div class="chart-title">Lo que tu familia necesita cada año</div><img src="'+imgAnual+'"/><div class="chart-note">Cuánto necesita tu familia cada año para mantener su estilo de vida.</div></div>' : ''}
-
-  <hr/>
-
-  ${imgNeto ? '<div class="chart-box"><div class="chart-title">Lo que el seguro debe cubrir cada año</div><img src="'+imgNeto+'"/><div class="chart-note">Lo que el seguro debe garantizar cada año para que nada cambie en tu familia.</div></div>' : ''}
-
-  <hr/>
-
-  ${imgNec ? '<div class="chart-box"><div class="chart-title">El capital que tu familia necesitaría según cuándo ocurra</div><img src="'+imgNec+'"/><div class="chart-note">El capital que necesitaría tu familia según cuándo ocurra. Cada número representa la protección que hoy podés dejar asegurada.</div></div>' : ''}
-
-  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de protección familiar</div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     HOJA 3 — PLAN DE PROTECCIÓN
-══════════════════════════════════════════ -->
-<div class="page">
-  <div class="hdr">
-    <img src="${logoSrc}" alt="Prospei"/>
-    <div class="hdr-div"></div>
-    <div><div class="hdr-title">El plan que protege a tu familia</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
-  </div>
-
-  <div class="slabel">Cobertura propuesta</div>
-  <div class="drow">
-    <div class="dbox"><div class="dl">Cobertura Vida Entera</div><div class="dv">${cobVida}</div></div>
-    <div class="dbox"><div class="dl">Renta Familiar — cuota anual garantizada</div><div class="dv">${rentaCuota}</div></div>
-    <div class="dbox"><div class="dl">Renta Familiar — años</div><div class="dv">${rentaAnios} años</div></div>
-  </div>
-
-  <div class="slabel">Lo que necesita tu familia</div>
-  <div class="mgrid">${metricsHtml}</div>
-
-  ${imgPlan ? '<div class="chart-box"><div class="chart-title">Tu plan cubre las necesidades de tu familia</div><img src="'+imgPlan+'"/><div class="chart-note">Rojo: lo que necesita tu familia. Verde: lo que garantiza tu plan. Cuando el verde iguala al rojo, tu familia está completamente protegida.</div></div>' : ''}
-
-  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de protección familiar</div>
-</div>
-
-<!-- ══ HOJA 4: ANALOGÍA ══ -->
-<div class="page">
-  <div class="hdr">
-    <img src="${logoSrc}" alt="Prospei"/>
-    <div class="hdr-div"></div>
-    <div><div class="hdr-title">El cambio que te proponemos</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
-  </div>
-  <p style="font-size:10pt;color:#5A5A7A;line-height:1.6;margin-bottom:16px">
-    Hoy tu familia carga sola con todo el peso. Te proponemos algo diferente: dejar esa 
-    responsabilidad en manos de Zurich — más de 160 años protegiendo proyectos de familia — 
-    y a cambio, solo te ocupás de una pequeña cuota mensual.
-  </p>
-  <div style="width:100%;border-radius:8px;overflow:hidden;background:linear-gradient(135deg,#FFF5F5 0%,#F5FFF7 100%);padding:4px 0">
-    ${svgAnalogia || '<p style=\'text-align:center;color:#999;padding:40px\'>Calculá el plan de protección para ver la ilustración</p>'}
-  </div>
-  <p style="text-align:center;font-size:10pt;color:#1A1A2E;margin-top:16px">
-    ¿Estás listo para dar este paso? <strong>Prospei Consultores Financieros</strong> está acá para acompañarte.
-  </p>
-  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de protección familiar</div>
-</div>
-
-</body></html>`);
-  W.document.close();
-  setTimeout(function(){ W.print(); }, 800);
-}
-var gCalc = null;
-
-function calcular() {
-  var horizon = parseInt(document.getElementById('horizon').value)||20;
-  var dMant = [], dEdu = [], dEv = [];
-  for (var i=0; i<horizon; i++) { dMant.push(0); dEdu.push(0); dEv.push(0); }
-
-  var vivMonto = document.getElementById('chkViv').checked ? (parseFloat(document.getElementById('propVal').value)||0) : 0;
-
-  // Mantenimiento
-  if (document.getElementById('chkMant').checked) {
-    var anual = (parseFloat(document.getElementById('mantMens').value)||0)*12;
-    var anios = parseInt(document.getElementById('mantAnios').value)||horizon;
-    var aj = parseFloat(document.getElementById('mantAj').value)/100||0;
-    for (var i=0; i<Math.min(anios,horizon); i++) dMant[i] = anual*Math.pow(1+aj,i);
-  }
-
-  // Educación
-  if (document.getElementById('chkEdu').checked) {
-    var eduDivs = document.querySelectorAll('[id^="eduhijo-"]');
-    for (var j=0; j<eduDivs.length; j++) {
-      var el = eduDivs[j];
-      var famId = el.dataset.famid;
-      var edad = 0;
-      if (famId) {
-        var num = famId.split('-')[1];
-        var eEl = document.getElementById('hf'+num+'Edad');
-        if (eEl) edad = parseInt(eEl.value)||0;
-      }
-      var rows = el.querySelectorAll('.etapa-row');
-      var cursor = 0;
-      for (var k=0; k<rows.length; k++) {
-        var chk   = rows[k].querySelector('.etapa-chk');
-        var durEl = rows[k].querySelector('.etapa-dur');
-        var cosEl = rows[k].querySelector('.etapa-costo');
-        var duracion = parseInt(durEl.value)||0;
-        if (!chk.checked || duracion===0) continue;
-        var ca = (parseFloat(cosEl.value)||0)*11;
-        for (var d=0; d<duracion; d++) {
-          var yr = cursor+d;
-          if (yr<horizon) dEdu[yr] += ca;
-        }
-        cursor += duracion;
-      }
-    }
-  }
 
   // Eventos
-  if (document.getElementById('chkEv').checked) {
-    var evDivs = document.querySelectorAll('[id^="evento-"]');
-    for (var j=0; j<evDivs.length; j++) {
-      var el = evDivs[j];
-      var m = parseFloat(el.querySelector('.ev-monto').value)||0;
-      var a = parseInt(el.querySelector('.ev-anio').value)||1;
-      if (a-1<horizon) dEv[a-1] += m;
-    }
-  }
-
-  var totMant=0, totEdu=0, totEv=0;
-  for (var i=0;i<horizon;i++){totMant+=dMant[i];totEdu+=dEdu[i];totEv+=dEv[i];}
-
-  // Sufijos para necesidades acumuladas
-  var necMant=[], necEdu=[], necEv=[];
-  for (var i=0;i<horizon;i++){necMant.push(0);necEdu.push(0);necEv.push(0);}
-  for (var i=horizon-1;i>=0;i--) {
-    necMant[i] = (i<horizon-1?necMant[i+1]:0)+dMant[i];
-    necEdu[i]  = (i<horizon-1?necEdu[i+1]:0)+dEdu[i];
-    necEv[i]   = (i<horizon-1?necEv[i+1]:0)+dEv[i];
-  }
-
-  // Ingresos
-  var mantAniosVal = parseInt(document.getElementById('mantAnios').value)||horizon;
-  var ingMens = 0;
-  if (document.getElementById('chkIng').checked) {
-    ingMens = (parseFloat(document.getElementById('ingConyuge').value)||0) +
-              (parseFloat(document.getElementById('ingOtros').value)||0);
-  }
-  var ingAnual = ingMens * 12;
-
-  // Brecha anual neta
-  var brechaAnual = [];
-  for (var i=0; i<horizon; i++) {
-    var nec = dMant[i]+dEdu[i]+dEv[i];
-    var ing = (i<mantAniosVal) ? ingAnual : 0;
-    brechaAnual.push(Math.max(0, nec-ing));
-  }
-
-  // Brecha acumulada neta
-  var brechaAcum = [];
-  for (var i=0; i<horizon; i++) {
-    var necAcum = vivMonto+necMant[i]+necEdu[i]+necEv[i];
-    var ingFut = 0;
-    for (var j=i; j<Math.min(mantAniosVal,horizon); j++) ingFut += ingAnual;
-    brechaAcum.push(Math.max(0, necAcum-ingFut));
-  }
-
-  var yLabels = [];
-  for (var i=0;i<horizon;i++) yLabels.push('Año '+(i+1));
-
-  // Summary
-  document.getElementById('sum-grid').innerHTML =
-    mkMetric('Capital necesario (año 1)', fmtF(vivMonto+necMant[0]+necEdu[0]+necEv[0]), 'capital que necesita tu familia hoy', null, true)+
-    mkMetric('Vivienda',      fmt(vivMonto), '', C.viv,  false)+
-    mkMetric('Mantenimiento', fmt(totMant),  '', C.mant, false)+
-    mkMetric('Educación',     fmt(totEdu),   '', C.edu,  false)+
-    mkMetric('Eventos',       fmt(totEv),    '', C.ev,   false);
-
-  document.getElementById('legend').innerHTML =
-    mkLeg('Vivienda (base fija)', C.viv)+
-    mkLeg('Mantenimiento', C.mant)+
-    mkLeg('Educación', C.edu)+
-    mkLeg('Eventos especiales', C.ev);
-
-  if (charts.anual) { charts.anual.destroy(); charts.anual=null; }
-  if (charts.neto)  { charts.neto.destroy();  charts.neto=null;  }
-  if (charts.nec)   { charts.nec.destroy();   charts.nec=null;   }
-
-  var vivArr = [];
-  for (var i=0;i<horizon;i++) vivArr.push(vivMonto);
-
-  // Chart 1: gastos anuales
-  var ctx1 = document.getElementById('chartAnual').getContext('2d');
-  charts.anual = new Chart(ctx1, {
-    type:'bar',
-    data:{labels:yLabels, datasets:[
-      {label:'Mantenimiento', data:dMant, backgroundColor:C.mant, stack:'s'},
-      {label:'Educación',     data:dEdu,  backgroundColor:C.edu,  stack:'s'},
-      {label:'Eventos',       data:dEv,   backgroundColor:C.ev,   stack:'s'},
-      {label:'Necesidad neta', data:brechaAnual, type:'line',
-       borderColor:'#1A1A2E', backgroundColor:'transparent',
-       borderWidth:2, borderDash:[4,3], pointRadius:2, tension:0.3, order:0}
-    ]},
-    options:{responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:12,padding:14}},
-               tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);}}}},
-      scales:{x:{stacked:true,ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
-              y:{stacked:true,ticks:{callback:function(v){return fmt(v);},font:{size:11}}}}}
+  var evHTML = '';
+  document.querySelectorAll('[id^="evento-"]').forEach(function(ev) {
+    var desc  = (ev.querySelector('.ev-desc')||{}).value  || '';
+    var monto = (ev.querySelector('.ev-monto')||{}).value || '';
+    var anio  = (ev.querySelector('.ev-anio')||{}).value  || '';
+    if (monto) evHTML += '<tr><td>'+desc+'</td><td>'+fmtF(parseFloat(monto)||0)+'</td><td>Año '+anio+'</td></tr>';
   });
 
-  // Chart 2: necesidades netas por año
-  var netaMant=[], netaEdu=[], netaEv=[];
-  for (var i=0; i<horizon; i++) {
-    var bruta = dMant[i]+dEdu[i]+dEv[i];
-    var neta  = Math.max(0, bruta - ((i<mantAniosVal)?ingAnual:0));
-    if (bruta>0) {
-      netaMant.push(dMant[i]/bruta*neta);
-      netaEdu.push(dEdu[i]/bruta*neta);
-      netaEv.push(dEv[i]/bruta*neta);
-    } else { netaMant.push(0); netaEdu.push(0); netaEv.push(0); }
+  // Plan metrics
+  var sumEl = document.getElementById('sum-plan');
+  var metricsHTML = sumEl ? sumEl.innerHTML : '';
+
+  // 5. Build print HTML
+  var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+    + '<title>Prospei — Análisis de necesidades</title>'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;}'
+    + '@page{size:A4 portrait;margin:1.4cm 1.6cm;}'
+    + 'body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#1A1A2E;background:white;}'
+    + '.page{page-break-after:always;padding-bottom:0.3cm;}'
+    + '.page:last-child{page-break-after:avoid;}'
+    + '.hdr{display:flex;align-items:center;gap:12px;padding-bottom:8px;border-bottom:3px solid #5B2ECC;margin-bottom:12px;}'
+    + '.hdr img{height:44px;width:auto;flex-shrink:0;}'
+    + '.hdiv{width:1px;height:36px;background:#D0D4EE;flex-shrink:0;}'
+    + '.htit{font-size:18pt;font-weight:bold;color:#1A1A2E;line-height:1.2;}'
+    + '.hsub{font-size:8pt;color:#5A5A7A;margin-top:2px;}'
+    + '.slbl{font-size:8pt;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#5B2ECC;margin:10px 0 5px;border-left:3px solid #5B2ECC;padding-left:6px;}'
+    + '.drow{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;}'
+    + '.dbox{background:#F4F5FC;border-radius:6px;padding:5px 8px;flex:1;min-width:90px;}'
+    + '.dl{font-size:7pt;color:#5A5A7A;text-transform:uppercase;margin-bottom:2px;}'
+    + '.dv{font-size:11pt;font-weight:bold;}'
+    + '.fam{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}'
+    + '.fbox{background:#F4F5FC;border-radius:6px;padding:5px 9px;min-width:100px;}'
+    + '.fl{font-size:7pt;color:#5B2ECC;font-weight:bold;text-transform:uppercase;margin-bottom:2px;}'
+    + '.fv{font-size:11pt;font-weight:bold;}'
+    + '.fs{font-size:8pt;color:#5A5A7A;}'
+    + 'table{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:8.5pt;}'
+    + 'th{background:#EEEDFE;color:#3C3489;font-weight:bold;font-size:7.5pt;text-transform:uppercase;padding:4px 7px;border:0.5px solid #C5CEF5;text-align:left;}'
+    + 'td{padding:3px 7px;border:0.5px solid #D0D4EE;}'
+    + 'tr:nth-child(even) td{background:#FAFAFA;}'
+    + '.edu-hdr td{background:#E8EDFB;font-weight:bold;}'
+    + '.chtit{font-size:10pt;font-weight:bold;margin:8px 0 4px;}'
+    + '.chnote{font-size:7.5pt;color:#5A5A7A;margin-top:3px;margin-bottom:4px;}'
+    + '.chimg img{width:100%;height:auto;display:block;border:0.5px solid #eee;border-radius:4px;}'
+    + 'hr{border:none;border-top:0.5px solid #D0D4EE;margin:8px 0;}'
+    + '.mgrid{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;}'
+    + '.mbox{background:#F4F5FC;border-radius:6px;padding:5px 8px;flex:1;min-width:80px;}'
+    + '.mbox-hi{background:#D8DFFB;}'
+    + '.ml{font-size:7pt;color:#5A5A7A;text-transform:uppercase;margin-bottom:2px;}'
+    + '.mv{font-size:12pt;font-weight:bold;}'
+    + '.mbox-hi .mv{color:#5B2ECC;}'
+    + '.ms{font-size:7pt;color:#5A5A7A;margin-top:1px;}'
+    + '.foot{text-align:center;font-size:7pt;color:#aaa;margin-top:12px;padding-top:5px;border-top:0.5px solid #eee;}'
+    + '.analogy-wrap{width:100%;border-radius:8px;overflow:hidden;background:linear-gradient(135deg,#FFF5F5,#F5FFF7);padding:4px 0;}'
+    + '</style></head><body>';
+
+  function pg(content) { return '<div class="page">' + content + '</div>'; }
+  function hdr(t,s) { return '<div class="hdr"><img src="'+logoSrc+'" alt="Prospei"/><div class="hdiv"></div><div><div class="htit">'+t+'</div><div class="hsub">'+s+'</div></div></div>'; }
+  function foot() { return '<div class="foot">Prospei Consultores Financieros · Análisis de necesidades y plan de protección familiar</div>'; }
+  function dbox(l,v) { return '<div class="dbox"><div class="dl">'+l+'</div><div class="dv">'+v+'</div></div>'; }
+  function slbl(t) { return '<div class="slbl">'+t+'</div>'; }
+
+  // PAGE 1: DATA
+  var p1 = hdr('Análisis de necesidades y plan de protección familiar','Porque tu familia merece seguir adelante, pase lo que pase.');
+  p1 += slbl('Familia');
+  p1 += '<div class="fam">'
+      + '<div class="fbox"><div class="fl">Titular</div><div class="fv">'+titNombre+'</div><div class="fs">'+titEdad+' años</div></div>'
+      + (parNombre ? '<div class="fbox"><div class="fl">Pareja</div><div class="fv">'+parNombre+'</div><div class="fs">'+parEdad+' años</div></div>' : '')
+      + hijosHTML + '</div>';
+  p1 += slbl('Tu horizonte de protección');
+  p1 += '<div class="drow">'+dbox('Moneda',cur)+dbox('Horizonte de análisis',horizon+' años')+'</div>';
+  p1 += slbl('El hogar de tu familia');
+  p1 += '<div class="drow">'+dbox('Valor del hogar a proteger',vivienda)+'</div>';
+  p1 += slbl('El ritmo de vida de tu familia');
+  p1 += '<div class="drow">'+dbox('Gasto mensual de la familia',mantM)+dbox('Años de cobertura',mantA+' años')+'</div>';
+  p1 += slbl('El futuro de tus hijos');
+  p1 += '<table><thead><tr><th>Etapa</th><th>Años · Cuota mensual</th></tr></thead><tbody>'+eduHTML+'</tbody></table>';
+  if (evHTML) {
+    p1 += slbl('Los momentos que querés garantizar');
+    p1 += '<table><thead><tr><th>Descripción</th><th>Monto</th><th>Año</th></tr></thead><tbody>'+evHTML+'</tbody></table>';
   }
-  if (charts.neto) { charts.neto.destroy(); charts.neto=null; }
-  var ctxN = document.getElementById('chartNeto').getContext('2d');
-  charts.neto = new Chart(ctxN, {
-    type:'bar',
-    data:{labels:yLabels, datasets:[
-      {label:'Mantenimiento', data:netaMant, backgroundColor:C.mant, stack:'s'},
-      {label:'Educación',     data:netaEdu,  backgroundColor:C.edu,  stack:'s'},
-      {label:'Eventos',       data:netaEv,   backgroundColor:C.ev,   stack:'s'}
-    ]},
-    options:{responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:12,padding:14}},
-               tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);}}}},
-      scales:{x:{stacked:true,ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
-              y:{stacked:true,ticks:{callback:function(v){return fmt(v);},font:{size:11}}}}}
-  });
-  buildNetoTable(yLabels, netaMant, netaEdu, netaEv, brechaAnual, horizon);
+  p1 += slbl('Lo que aportaría tu pareja');
+  p1 += '<div class="drow">'+dbox('Ingreso mensual cónyuge',ingCon)+dbox('Otros ingresos',ingOt)+'</div>';
+  p1 += foot();
 
-  // Chart 3: necesidades acumuladas
-  var ingAcum = [];
-  for (var i=0; i<horizon; i++) {
-    var aniosIng = Math.max(0, Math.min(mantAniosVal, horizon)-i);
-    var totalNec = vivMonto+necMant[i]+necEdu[i]+necEv[i];
-    ingAcum.push(Math.min(ingAnual*aniosIng, totalNec));
+  // PAGE 2: CHARTS
+  var p2 = hdr('Tu análisis de protección familiar — gráficos','Prospei Consultores Financieros');
+  if (imgAnual) p2 += '<div class="chtit">Lo que tu familia necesita cada año</div><div class="chimg"><img src="'+imgAnual+'"/></div><div class="chnote">Cuánto necesita tu familia cada año para mantener su estilo de vida.</div><hr/>';
+  if (imgNeto)  p2 += '<div class="chtit">Lo que el seguro debe cubrir cada año</div><div class="chimg"><img src="'+imgNeto+'"/></div><div class="chnote">Una vez descontado el aporte de tu pareja, esto es lo que el seguro debe garantizar.</div><hr/>';
+  if (imgNec)   p2 += '<div class="chtit">El capital que tu familia necesitaría según cuándo ocurra</div><div class="chimg"><img src="'+imgNec+'"/></div><div class="chnote">Cada barra es el capital total que necesitaría tu familia. La protección que hoy podés dejar asegurada.</div>';
+  p2 += foot();
+
+  // PAGE 3: PLAN
+  var p3 = hdr('El plan que protege a tu familia','Prospei Consultores Financieros');
+  p3 += slbl('Cobertura propuesta');
+  p3 += '<div class="drow">'+dbox('Vida Entera',cobVida)+dbox('Renta Familiar — cuota anual',rentaCuota)+dbox('Renta Familiar — años',rentaAnios+' años')+'</div>';
+  p3 += slbl('Lo que necesita tu familia');
+  p3 += '<div class="mgrid">'+metricsHTML+'</div>';
+  if (imgPlan) p3 += '<div class="chtit">Tu plan cubre las necesidades de tu familia</div><div class="chimg"><img src="'+imgPlan+'"/></div><div class="chnote">Rojo: lo que necesita tu familia. Verde: lo que garantiza tu plan. Cuando el verde iguala al rojo, tu familia está completamente protegida.</div>';
+  p3 += foot();
+
+  // PAGE 4: ANALOGY
+  var p4 = hdr('El cambio que te proponemos','Prospei Consultores Financieros');
+  p4 += '<p style="font-size:10pt;color:#5A5A7A;line-height:1.6;margin-bottom:14px">Hoy tu familia carga sola con todo el peso. Te proponemos algo diferente: dejar esa responsabilidad en manos de Zurich — más de 160 años protegiendo proyectos de familia — y a cambio, solo te ocupás de una pequeña cuota mensual'+(primaStr?' ('+primaStr+')')+'.</p>';
+  if (svgStr) {
+    p4 += '<div class="analogy-wrap">'+svgStr+'</div>';
+  } else {
+    p4 += '<p style="text-align:center;color:#999;padding:30px;font-size:9pt">Completá la prima mensual y presioná "Generar ilustración" para ver el gráfico.</p>';
   }
-  var ctx3 = document.getElementById('chartNec').getContext('2d');
-  charts.nec = new Chart(ctx3, {
-    type:'bar',
-    data:{labels:yLabels, datasets:[
-      {label:'Vivienda',     data:vivArr,  backgroundColor:C.viv,  stack:'s'},
-      {label:'Mantenimiento',data:necMant, backgroundColor:C.mant, stack:'s'},
-      {label:'Educación',    data:necEdu,  backgroundColor:C.edu,  stack:'s'},
-      {label:'Eventos',      data:necEv,   backgroundColor:C.ev,   stack:'s'}
-    ]},
-    options:{responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:12,padding:14}},
-               tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fmtF(ctx.raw);}}}},
-      scales:{x:{stacked:true,ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
-              y:{stacked:true,ticks:{callback:function(v){return fmt(v);},font:{size:11}},
-                 title:{display:true,text:'Capital necesario',font:{size:11},color:'#888'}}}}
-  });
+  p4 += '<p style="text-align:center;font-size:10pt;color:#1A1A2E;margin-top:14px">¿Estás listo para dar este paso? <strong>Prospei Consultores Financieros</strong> está acá para acompañarte.</p>';
+  p4 += foot();
 
-  buildTable1(yLabels, dMant, dEdu, dEv, horizon);
-  buildTable2(yLabels, vivMonto, necMant, necEdu, necEv, horizon);
+  html += pg(p1) + pg(p2) + pg(p3) + pg(p4) + '</body></html>';
 
-  // Store globally for plan
-  gCalc = { horizon:horizon, dMant:dMant, dEdu:dEdu, dEv:dEv, vivMonto:vivMonto,
-            necMant:necMant, necEdu:necEdu, necEv:necEv, yLabels:yLabels,
-            ingAnual:ingAnual, mantAniosVal:mantAniosVal,
-            brechaAnual:brechaAnual, brechaAcum:brechaAcum };
-
-  document.getElementById('results').classList.remove('hidden');
-  document.getElementById('sec-plan').classList.remove('hidden');
-  document.getElementById('results-plan').classList.add('hidden');
-  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+  // 6. Open print window
+  var W = window.open('', '_blank');
+  if (!W) {
+    alert('Por favor permitir popups para este sitio y volvé a intentar.');
+    return;
+  }
+  W.document.open();
+  W.document.write(html);
+  W.document.close();
+  setTimeout(function(){ W.print(); }, 1000);
 }
-
-
 
 function calcPlan() {
   if (!gCalc) { alert('Primero calculá el análisis de necesidades.'); return; }
@@ -1300,13 +969,19 @@ function calcPlan() {
   }
 
   // Summary
-  var maxBrecha  = brechaAcum[0] || 0;
+  // necTotal[0] = necesidades brutas año 1
+  // cobTotalFull[0] = vida entera + renta familiar año 1
+  // ingAcum[0] = ingresos del cónyuge acumulados desde año 1
+  // Excedente = (cobertura + ingresos) - necesidades brutas
+  var necBruta   = necTotal[0] || 0;
   var cobAnio1   = cobTotalFull[0] || 0;
-  var diferencia = cobAnio1 - maxBrecha;
+  var ingAnio1   = ingAcum[0] || 0;
+  var coberturaMasIngresos = cobAnio1 + ingAnio1;
+  var diferencia = coberturaMasIngresos - necBruta;
 
   document.getElementById('sum-plan').innerHTML =
-    mkMetric('Necesidades totales año 1', fmtF(necTotal[0]||0), 'total de necesidades a cubrir', '#C0392B', false) +
-    mkMetric('Cobertura total año 1', fmtF(cobAnio1), 'tu plan garantiza este capital', '#1A7A4A', false) +
+    mkMetric('Necesidades brutas año 1', fmtF(necBruta), 'total de necesidades a cubrir', '#C0392B', false) +
+    mkMetric('Cobertura + ingresos año 1', fmtF(coberturaMasIngresos), 'seguro + aporte del cónyuge', '#1A7A4A', false) +
     mkMetric(diferencia >= 0 ? 'Excedente' : 'Déficit',
              fmtF(Math.abs(diferencia)),
              diferencia >= 0 ? '¡tu familia está protegida! ✓' : 'ajustá la cobertura ✗',
