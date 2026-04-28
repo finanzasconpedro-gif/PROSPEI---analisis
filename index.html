@@ -725,6 +725,14 @@ function exportPDF() {
 
   // Capture charts as images at high resolution
   var imgAnual = document.getElementById('chartAnual') ? document.getElementById('chartAnual').toDataURL('image/png', 1.0) : null;
+  
+  // Capture SVG analogy
+  var svgAnalogia = '';
+  var svgEl = document.getElementById('svg-analogia');
+  if (svgEl && svgEl.innerHTML) {
+    var svgOuter = new XMLSerializer().serializeToString(svgEl);
+    svgAnalogia = svgOuter;
+  }
   var imgNeto  = document.getElementById('chartNeto')  ? document.getElementById('chartNeto').toDataURL('image/png', 1.0)  : null;
   var imgNec   = document.getElementById('chartNec')   ? document.getElementById('chartNec').toDataURL('image/png', 1.0)   : null;
   var imgPlan  = document.getElementById('chartPlan')  ? document.getElementById('chartPlan').toDataURL('image/png', 1.0)  : null;
@@ -783,6 +791,23 @@ function exportPDF() {
   var cobVida    = fmtF(parseFloat(document.getElementById('cobVida').value)||0);
   var rentaCuota = fmtF(parseFloat(document.getElementById('rentaCuota').value)||0);
   var rentaAnios = document.getElementById('rentaAnios').value;
+
+  // Analogy data
+  var primaVal   = document.getElementById('primaMensual') ? (document.getElementById('primaMensual').value || '') : '';
+  var primaSym   = document.getElementById('primaMoneda')  ? (document.getElementById('primaMoneda').value === 'EUR' ? '€' : '$') : '$';
+  var primaStr   = primaVal ? primaSym + parseFloat(primaVal).toLocaleString('es-AR') + '/mes' : '';
+  var titSexoVal = document.getElementById('titSexo')  ? document.getElementById('titSexo').value  : 'M';
+  var parSexoVal = document.getElementById('parSexo')  ? document.getElementById('parSexo').value  : 'F';
+  var hijosAnalogia = [];
+  document.querySelectorAll('[id^="hijofam-"]').forEach(function(el) {
+    var num = el.id.split('-')[1];
+    var n   = document.getElementById('hf'+num+'Nombre') ? document.getElementById('hf'+num+'Nombre').value.split(' ')[0] : '';
+    var sx  = document.getElementById('hf'+num+'Sexo')   ? document.getElementById('hf'+num+'Sexo').value   : 'M';
+    if (n) hijosAnalogia.push({nombre:n, sexo:sx});
+  });
+
+  // Need total for stone label
+  var needTotalStr = gCalc ? fmtF(gCalc.vivMonto+(gCalc.necMant[0]||0)+(gCalc.necEdu[0]||0)+(gCalc.necEv[0]||0)) : '';
 
   // Build metrics HTML for plan summary
   var sumPlan = document.getElementById('sum-plan');
@@ -984,6 +1009,27 @@ hr{border:none;border-top:0.5px solid #D0D4EE;margin:10px 0;}
 
   ${imgPlan ? '<div class="chart-box"><div class="chart-title">Tu plan cubre las necesidades de tu familia</div><img src="'+imgPlan+'"/><div class="chart-note">Rojo: lo que necesita tu familia. Verde: lo que garantiza tu plan. Cuando el verde iguala al rojo, tu familia está completamente protegida.</div></div>' : ''}
 
+  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de protección familiar</div>
+</div>
+
+<!-- ══ HOJA 4: ANALOGÍA ══ -->
+<div class="page">
+  <div class="hdr">
+    <img src="${logoSrc}" alt="Prospei"/>
+    <div class="hdr-div"></div>
+    <div><div class="hdr-title">El cambio que te proponemos</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
+  </div>
+  <p style="font-size:10pt;color:#5A5A7A;line-height:1.6;margin-bottom:16px">
+    Hoy tu familia carga sola con todo el peso. Te proponemos algo diferente: dejar esa 
+    responsabilidad en manos de Zurich — más de 160 años protegiendo proyectos de familia — 
+    y a cambio, solo te ocupás de una pequeña cuota mensual.
+  </p>
+  <div id="analogia-print-wrap" style="width:100%;border-radius:8px;overflow:hidden;background:linear-gradient(135deg,#FFF5F5 0%,#F5FFF7 100%);padding:8px 0">
+    ${svgAnalogia ? svgAnalogia.replace('<svg ', '<svg style="width:100%;height:auto;display:block" ') : '<p style=\'text-align:center;color:#999;padding:40px\'>Calculá el plan de protección para ver la ilustración</p>'}
+  </div>
+  <p style="text-align:center;font-size:10pt;color:#1A1A2E;margin-top:16px">
+    ¿Estás listo para dar este paso? <strong>Prospei Consultores Financieros</strong> está acá para acompañarte.
+  </p>
   <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de protección familiar</div>
 </div>
 
@@ -1623,8 +1669,43 @@ function dibujarAnalogia() {
   // Strain lines
   out += '<text x="'+(titX_l-25)+'" y="'+(personY_l-55)+'" font-family="Arial" font-size="14" fill="'+RED_ROCK+'" opacity="0.7">😰</text>';
 
+  // Draw kids standing normally (arms down) between adults
+  var kidColors = ['#8E44AD','#2980B9','#E67E22','#27AE60'];
+  var numKids = hijosAnalogia ? hijosAnalogia.length : 0;
+  var kidXs = [];
+  if (numKids === 1)      kidXs = [W/4];
+  else if (numKids === 2) kidXs = [W/4-22, W/4+22];
+  else if (numKids === 3) kidXs = [W/4-35, W/4, W/4+35];
+  else if (numKids >= 4)  kidXs = [W/4-50, W/4-17, W/4+17, W/4+50];
+  for (var ki=0; ki<Math.min(numKids,4); ki++) {
+    var kx = kidXs[ki];
+    var ky = personY_l;
+    var ks = 0.72;
+    var kc = kidColors[ki % kidColors.length];
+    var kname = hijosAnalogia[ki].nombre;
+    var ksexo = hijosAnalogia[ki].sexo;
+    // kid body
+    out += '<circle cx="'+kx+'" cy="'+(ky+38*ks)+'" r="'+(10*ks)+'" fill="'+kc+'"/>';
+    if (ksexo==='F') {
+      out += '<circle cx="'+(kx+3*ks)+'" cy="'+(ky+49*ks)+'" r="'+(6*ks)+'" fill="'+kc+'"/>';
+      out += '<polygon points="'+(kx-9*ks)+','+(ky+26*ks)+' '+(kx+9*ks)+','+(ky+26*ks)+' '+(kx+11*ks)+','+ky+' '+(kx-11*ks)+','+ky+'" fill="'+kc+'"/>';
+      out += '<polygon points="'+(kx-13*ks)+','+ky+' '+(kx+13*ks)+','+ky+' '+(kx+16*ks)+','+(ky-18*ks)+' '+(kx-16*ks)+','+(ky-18*ks)+'" fill="'+kc+'"/>';
+      out += '<rect x="'+(kx-9*ks)+'" y="'+(ky-28*ks)+'" width="'+(6*ks)+'" height="'+(12*ks)+'" rx="'+(2*ks)+'" fill="'+kc+'"/>';
+      out += '<rect x="'+(kx+3*ks)+'" y="'+(ky-28*ks)+'" width="'+(6*ks)+'" height="'+(12*ks)+'" rx="'+(2*ks)+'" fill="'+kc+'"/>';
+    } else {
+      out += '<rect x="'+(kx-8*ks)+'" y="'+ky+'" width="'+(16*ks)+'" height="'+(26*ks)+'" rx="'+(3*ks)+'" fill="'+kc+'"/>';
+      out += '<rect x="'+(kx-8*ks)+'" y="'+(ky-18*ks)+'" width="'+(7*ks)+'" height="'+(18*ks)+'" rx="'+(3*ks)+'" fill="'+kc+'"/>';
+      out += '<rect x="'+(kx+1*ks)+'" y="'+(ky-18*ks)+'" width="'+(7*ks)+'" height="'+(18*ks)+'" rx="'+(3*ks)+'" fill="'+kc+'"/>';
+    }
+    // arms down relaxed
+    out += '<line x1="'+(kx-8*ks)+'" y1="'+(ky+20*ks)+'" x2="'+(kx-16*ks)+'" y2="'+(ky+6*ks)+'" stroke="'+kc+'" stroke-width="'+(6*ks)+'" stroke-linecap="round"/>';
+    out += '<line x1="'+(kx+8*ks)+'" y1="'+(ky+20*ks)+'" x2="'+(kx+16*ks)+'" y2="'+(ky+6*ks)+'" stroke="'+kc+'" stroke-width="'+(6*ks)+'" stroke-linecap="round"/>';
+    // name
+    out += '<text x="'+kx+'" y="'+(ky-36*ks)+'" text-anchor="middle" font-family="Arial" font-size="'+(7*ks)+'" font-weight="bold" fill="'+kc+'">'+kname+'</text>';
+  }
+
   // Caption below
-  out += '<text x="'+(W/4)+'" y="'+(H-20)+'" text-anchor="middle" font-family="Arial" font-size="9" fill="'+MUTED+'">Vos y tu familia cargan solos</text>';
+  out += '<text x="'+(W/4)+'" y="'+(H-20)+'" text-anchor="middle" font-family="Arial" font-size="9" fill="'+MUTED+'">'+titName+(parName?' y '+parName:'')+' cargan solos</text>';
   out += '<text x="'+(W/4)+'" y="'+(H-8)+'" text-anchor="middle" font-family="Arial" font-size="9" fill="'+MUTED+'">con todo el peso</text>';
 
   // ARROW in the middle
