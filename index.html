@@ -1152,15 +1152,14 @@ function calcPlan() {
   // cobTotalFull[0] = vida entera + renta familiar año 1
   // ingAcum[0] = ingresos del cónyuge acumulados desde año 1
   // Excedente = (cobertura + ingresos) - necesidades brutas
+  // cobTotalFull[i] = ingAcum[i] + cobVida + rentaAcum[i]  (ingresos YA incluidos)
   var necBruta   = necTotal[0] || 0;
-  var cobAnio1   = cobTotalFull[0] || 0;
-  var ingAnio1   = ingAcum[0] || 0;
-  var coberturaMasIngresos = cobAnio1 + ingAnio1;
-  var diferencia = coberturaMasIngresos - necBruta;
+  var cobAnio1   = cobTotalFull[0] || 0;  // = vida + renta + ingresos año 1
+  var diferencia = cobAnio1 - necBruta;
 
   document.getElementById('sum-plan').innerHTML =
     mkMetric('Necesidades brutas año 1', fmtF(necBruta), 'total de necesidades a cubrir', '#C0392B', false) +
-    mkMetric('Cobertura + ingresos año 1', fmtF(coberturaMasIngresos), 'seguro + aporte del cónyuge', '#1A7A4A', false) +
+    mkMetric('Cobertura + ingresos año 1', fmtF(cobAnio1), 'seguro + aporte del cónyuge', '#1A7A4A', false) +
     mkMetric(diferencia >= 0 ? 'Excedente' : 'Déficit',
              fmtF(Math.abs(diferencia)),
              diferencia >= 0 ? '¡tu familia está protegida! ✓' : 'ajustá la cobertura ✗',
@@ -1407,6 +1406,13 @@ function dibujarAnalogia() {
   var parName  = document.getElementById('parNombre') ? (document.getElementById('parNombre').value.split(' ')[0] || '') : '';
   var titSexo  = document.getElementById('titSexo')  ? document.getElementById('titSexo').value  : 'M';
   var parSexo  = document.getElementById('parSexo')  ? document.getElementById('parSexo').value  : 'F';
+  var hijosAnalogia = [];
+  document.querySelectorAll('[id^="hijofam-"]').forEach(function(el) {
+    var num = el.id.split('-')[1];
+    var n = document.getElementById('hf'+num+'Nombre') ? document.getElementById('hf'+num+'Nombre').value.split(' ')[0] : '';
+    var sx = document.getElementById('hf'+num+'Sexo')  ? document.getElementById('hf'+num+'Sexo').value  : 'M';
+    if (n) hijosAnalogia.push({nombre: n, sexo: sx});
+  });
 
   var W = 760, H = 340;
 
