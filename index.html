@@ -210,7 +210,7 @@
     <div class="header-divider"></div>
     <div>
       <div class="header-eyebrow">Planificación financiera</div>
-      <h1 class="header-title">Análisis de necesidades<br>y plan de acción</h1>
+      <h1 class="header-title">Análisis de necesidades<br>y plan de protección familiar</h1>
       <p class="header-sub">Prospei Consultores Financieros</p>
     </div>
   </div>
@@ -230,6 +230,9 @@
           <div class="row">
             <div class="field"><label>Fecha nac.</label><input type="date" id="titFecha" onchange="calcEdad('tit')" /></div>
             <div class="field"><label>Edad</label><input type="number" id="titEdad" placeholder="años" min="18" max="90" oninput="syncF('tit')" /></div>
+            <div class="field" style="min-width:90px;max-width:110px"><label>Sexo</label>
+              <select id="titSexo"><option value="M">Masculino</option><option value="F">Femenino</option></select>
+            </div>
           </div>
         </div>
         <div class="persona-card">
@@ -239,6 +242,9 @@
           <div class="row">
             <div class="field"><label>Fecha nac.</label><input type="date" id="parFecha" onchange="calcEdad('par')" /></div>
             <div class="field"><label>Edad</label><input type="number" id="parEdad" placeholder="años" min="18" max="90" oninput="syncF('par')" /></div>
+            <div class="field" style="min-width:90px;max-width:110px"><label>Sexo</label>
+              <select id="parSexo"><option value="F">Femenino</option><option value="M">Masculino</option></select>
+            </div>
           </div>
         </div>
       </div>
@@ -249,39 +255,39 @@
 
   <!-- DATOS -->
   <div class="section">
-    <div class="sec-label"><div class="sec-dot" style="background:var(--blue)"></div><span class="sec-title">Datos del análisis</span></div>
+    <div class="sec-label"><div class="sec-dot" style="background:var(--blue)"></div><span class="sec-title">Tu horizonte de protección</span></div>
     <div class="card">
       <div class="row">
         <div class="field"><label>Moneda</label>
           <select id="currency"><option value="USD">USD $</option><option value="ARS" selected>ARS $</option><option value="EUR">EUR €</option></select>
         </div>
-        <div class="field"><label>Horizonte (años)</label><input type="number" id="horizon" value="20" min="5" max="50" /></div>
+        <div class="field"><label>Años de análisis</label><input type="number" id="horizon" value="20" min="5" max="50" /></div>
       </div>
     </div>
   </div>
 
   <!-- VIVIENDA -->
   <div class="section">
-    <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">Vivienda</span></div>
+    <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">El hogar de tu familia</span></div>
     <div class="card">
-      <div class="toggle-row"><input type="checkbox" id="chkViv" checked /><span class="toggle-label">Incluir en el análisis</span></div>
+      <div class="toggle-row"><input type="checkbox" id="chkViv" checked /><span class="toggle-label">Incluir en el plan</span></div>
       <div id="sec-viv">
         <div class="row"><div class="field"><label>Valor de la propiedad (capital fijo)</label><input type="number" id="propVal" value="100000" /></div></div>
-        <p class="note">Se muestra como base fija en el gráfico de necesidades acumuladas.</p>
+        <p class="note">Tu familia necesita seguir viviendo en el mismo hogar. Este capital garantiza que eso sea posible.</p>
       </div>
     </div>
   </div>
 
   <!-- MANTENIMIENTO -->
   <div class="section">
-    <div class="sec-label"><div class="sec-dot" style="background:var(--violet)"></div><span class="sec-title">Gastos de mantenimiento</span></div>
+    <div class="sec-label"><div class="sec-dot" style="background:var(--violet)"></div><span class="sec-title">El ritmo de vida de tu familia</span></div>
     <div class="card">
-      <div class="toggle-row"><input type="checkbox" id="chkMant" checked /><span class="toggle-label">Incluir en el análisis</span></div>
+      <div class="toggle-row"><input type="checkbox" id="chkMant" checked /><span class="toggle-label">Incluir en el plan</span></div>
       <div id="sec-mant">
         <div class="row">
           <div class="field"><label>Gasto mensual</label><input type="number" id="mantMens" value="3000" /></div>
-          <div class="field"><label>Años de cobertura</label><input type="number" id="mantAnios" value="20" min="1" max="50" /></div>
-          <div class="field"><label>Ajuste anual (%)</label><input type="number" id="mantAj" value="0" min="0" max="50" /></div>
+          <div class="field"><label>Años que tu familia necesita ese ingreso</label><input type="number" id="mantAnios" value="20" min="1" max="50" /></div>
+          <div class="field"><label>Ajuste anual por inflación (%)</label><input type="number" id="mantAj" value="0" min="0" max="50" /></div>
         </div>
       </div>
     </div>
@@ -289,9 +295,9 @@
 
   <!-- EDUCACIÓN -->
   <div class="section">
-    <div class="sec-label"><div class="sec-dot" style="background:var(--coral)"></div><span class="sec-title">Educación</span></div>
+    <div class="sec-label"><div class="sec-dot" style="background:var(--coral)"></div><span class="sec-title">El futuro de tus hijos</span></div>
     <div class="card">
-      <div class="toggle-row"><input type="checkbox" id="chkEdu" checked /><span class="toggle-label">Incluir en el análisis</span></div>
+      <div class="toggle-row"><input type="checkbox" id="chkEdu" checked /><span class="toggle-label">Incluir en el plan</span></div>
       <div id="sec-edu">
         <div id="edu-list">
           <p style="font-size:13px;color:var(--muted);padding:.5rem 0">Agregá hijos en la sección Familia para configurar su educación.</p>
@@ -302,63 +308,63 @@
 
   <!-- EVENTOS -->
   <div class="section">
-    <div class="sec-label"><div class="sec-dot" style="background:var(--amber)"></div><span class="sec-title">Eventos especiales</span></div>
+    <div class="sec-label"><div class="sec-dot" style="background:var(--amber)"></div><span class="sec-title">Los momentos que querés garantizar</span></div>
     <div class="card">
-      <div class="toggle-row"><input type="checkbox" id="chkEv" checked /><span class="toggle-label">Incluir en el análisis</span></div>
+      <div class="toggle-row"><input type="checkbox" id="chkEv" checked /><span class="toggle-label">Incluir en el plan</span></div>
       <div id="sec-ev">
         <div id="eventos-lista"></div>
-        <button class="add-btn" onclick="addEvento()">+ Agregar evento</button>
+        <button class="add-btn" onclick="addEvento()">+ Agregar un momento especial</button>
       </div>
     </div>
   </div>
 
   <!-- INGRESOS CÓNYUGE -->
   <div class="section">
-    <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">Ingresos disponibles</span></div>
+    <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">Lo que aportaría tu pareja</span></div>
     <div class="card">
-      <div class="toggle-row"><input type="checkbox" id="chkIng" checked /><span class="toggle-label">Incluir en el análisis</span></div>
+      <div class="toggle-row"><input type="checkbox" id="chkIng" checked /><span class="toggle-label">Incluir en el plan</span></div>
       <div id="sec-ing">
         <div class="row">
           <div class="field"><label>Ingreso mensual cónyuge</label><input type="number" id="ingConyuge" value="0" placeholder="0"/></div>
           <div class="field"><label>Otros ingresos mensuales</label><input type="number" id="ingOtros" value="0" placeholder="0"/></div>
         </div>
-        <p class="note" style="margin-top:8px">Se descuenta mes a mes de las necesidades durante los años de mantenimiento. La necesidad neta = necesidades − ingresos disponibles.</p>
+        <p class="note" style="margin-top:8px">El ingreso que tu pareja podría sostener. Lo descontamos de las necesidades para mostrarte cuánto debe cubrir el seguro.</p>
       </div>
     </div>
   </div>
 
-  <button class="calc-btn" onclick="calcular()">Ver análisis de necesidades</button>
+  <button class="calc-btn" onclick="calcular()">Ver el análisis de protección familiar</button>
 
 
 
   <!-- RESULTADOS -->
   <div id="results" class="hidden">
     <div class="section">
-      <div class="sec-label"><div class="sec-dot" style="background:var(--violet)"></div><span class="sec-title">Resumen del plan</span></div>
+      <div class="sec-label"><div class="sec-dot" style="background:var(--violet)"></div><span class="sec-title">Lo que necesita tu familia</span></div>
       <div id="sum-grid" class="summary-grid"></div>
       <div class="card">
         <div class="legend" id="legend"></div>
 
         <!-- Gráfico 1 -->
-        <div class="chart-heading">Gastos por año — flujo anual de necesidades</div>
+        <div class="chart-heading">Lo que tu familia necesita cada año</div>
         <div class="chart-wrap" style="height:280px"><canvas id="chartAnual"></canvas></div>
-        <p class="chart-note">Gastos anuales por categoría. La vivienda no aparece aquí por ser un capital fijo, no un flujo anual.</p>
+        <p class="chart-note">Cuánto necesita tu familia cada año para mantener su estilo de vida. La vivienda se cubre aparte como capital único.</p>
         <button class="tbl-toggle" onclick="togTbl('tw1',this)">Ver tabla de datos</button>
         <div id="tw1" class="tbl-wrap hidden"><table class="data-table" id="t1"></table></div>
 
         <hr class="sep">
 
         <!-- Gráfico 2: Necesidades netas por año -->
-        <div class="chart-heading">Necesidades netas por año — después de descontar ingresos del cónyuge</div>
+        <div class="chart-heading">Lo que el seguro debe cubrir cada año</div>
         <div class="chart-wrap" style="height:280px"><canvas id="chartNeto"></canvas></div>
-        <p class="chart-note">Lo que el seguro de vida debe cubrir cada año, una vez descontados los ingresos disponibles del cónyuge. Estas son las necesidades reales de cobertura año a año.</p>
+        <p class="chart-note">Una vez que descontamos el aporte de tu pareja, esto es lo que el seguro debe garantizar cada año para que nada cambie en tu familia.</p>
         <button class="tbl-toggle" onclick="togTbl('tw-neto',this)">Ver tabla de datos</button>
         <div id="tw-neto" class="tbl-wrap hidden"><table class="data-table" id="t-neto"></table></div>
 
         <hr class="sep">
 
         <!-- Gráfico 3 -->
-        <div class="chart-heading">Necesidades acumuladas — capital requerido por año de inicio</div>
+        <div class="chart-heading">El capital que tu familia necesitaría según cuándo ocurra</div>
         <div class="chart-wrap" style="height:320px"><canvas id="chartNec"></canvas></div>
         <p class="chart-note">Cada barra muestra el capital necesario si el evento ocurriese ese año: vivienda (base fija) + suma de gastos futuros desde ese año en adelante.</p>
         <button class="tbl-toggle" onclick="togTbl('tw2',this)">Ver tabla de datos</button>
@@ -380,20 +386,20 @@
   <!-- PLAN DE PROTECCIÓN -->
   <div id="sec-plan" class="hidden">
     <div class="section" style="margin-top:2rem">
-      <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">Plan de protección</span></div>
+      <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">El plan que protege a tu familia</span></div>
       <div class="card">
 
         <div style="margin-bottom:1.25rem">
           <div style="font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem">Cobertura propuesta</div>
           <div class="row">
-            <div class="field"><label>Cobertura Vida Entera (capital fijo)</label><input type="number" id="cobVida" value="0" placeholder="0"/></div>
-            <div class="field"><label>Renta Familiar — cuota anual</label><input type="number" id="rentaCuota" value="0" placeholder="0"/></div>
-            <div class="field"><label>Renta Familiar — cantidad de años</label><input type="number" id="rentaAnios" value="0" min="0" max="50" placeholder="0"/></div>
+            <div class="field"><label>Cobertura Vida Entera — capital permanente</label><input type="number" id="cobVida" value="0" placeholder="0"/></div>
+            <div class="field"><label>Renta Familiar — cuota anual garantizada</label><input type="number" id="rentaCuota" value="0" placeholder="0"/></div>
+            <div class="field"><label>Renta Familiar — años de cobertura</label><input type="number" id="rentaAnios" value="0" min="0" max="50" placeholder="0"/></div>
           </div>
-          <p class="note" style="margin-top:8px">Renta familiar: si ponés $10.000 por 5 años → año 1 = $50.000, año 2 = $40.000... hasta $0 en el año 5.</p>
+          <p class="note" style="margin-top:8px">La Renta Familiar cubre el período más crítico. Ejemplo: $10.000/año × 5 años = $50.000 el primer año, decreciendo hasta cerrarse al año 5 cuando tu familia ya está de pie.</p>
         </div>
 
-        <button class="calc-btn" style="margin:0 auto" onclick="calcPlan()">Ver plan de protección</button>
+        <button class="calc-btn" style="margin:0 auto" onclick="calcPlan()">Ver mi plan de protección</button>
       </div>
     </div>
   </div>
@@ -401,14 +407,14 @@
   <!-- RESULTADOS PLAN -->
   <div id="results-plan" class="hidden">
     <div class="section">
-      <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">Plan de protección — resultado</span></div>
+      <div class="sec-label"><div class="sec-dot" style="background:var(--teal)"></div><span class="sec-title">Tu plan de protección familiar — resultado</span></div>
       <div id="sum-plan" class="summary-grid"></div>
       <div class="card">
         <div class="legend" id="legend-plan"></div>
 
-        <div class="chart-heading">Necesidades vs. cobertura acumulada — plan de protección</div>
+        <div class="chart-heading">Tu plan cubre las necesidades de tu familia</div>
         <div class="chart-wrap" style="height:320px"><canvas id="chartPlan"></canvas></div>
-        <p class="chart-note">Rojo: necesidades acumuladas totales. Verde: cobertura disponible (ingresos del cónyuge + Vida Entera + Renta Familiar). La línea punteada es la necesidad neta real. Cuando las barras verdes igualan o superan las rojas, el plan cubre todas las necesidades.</p>
+        <p class="chart-note">Rojo: lo que tu familia necesitaría. Verde: lo que tu plan garantiza (Vida Entera + Renta Familiar + aporte de tu pareja). Cuando el verde iguala al rojo, tu familia queda completamente protegida.</p>
         <button class="tbl-toggle" onclick="togTbl('tw-plan2',this)">Ver tabla de datos</button>
         <div id="tw-plan2" class="tbl-wrap hidden"><table class="data-table" id="t-plan2"></table></div>
 
@@ -423,11 +429,52 @@
         </button>
       </div>
     </div>
+  <!-- ANALOGÍA VISUAL -->
+  <div id="sec-analogia" class="hidden">
+    <div class="section" style="margin-top:2rem">
+      <div class="sec-label">
+        <div class="sec-dot" style="background:var(--violet)"></div>
+        <span class="sec-title">El cambio que le proponés a tu cliente</span>
+      </div>
+      <div class="card">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;line-height:1.6">
+          Hoy tu familia carga sola con todo el peso. Te proponemos algo diferente: 
+          dejar esa responsabilidad en manos de Zurich — más de 160 años protegiendo 
+          proyectos de familia — y a cambio, solo te ocupás de una pequeña cuota mensual.
+        </p>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+          <div class="field" style="max-width:220px">
+            <label>Prima / cuota mensual del plan</label>
+            <input type="number" id="primaMensual" placeholder="Ej: 350" oninput="dibujarAnalogia()" />
+          </div>
+          <div class="field" style="max-width:200px">
+            <label>Moneda</label>
+            <select id="primaMoneda" onchange="dibujarAnalogia()">
+              <option value="USD">USD $</option>
+              <option value="ARS" selected>ARS $</option>
+              <option value="EUR">EUR €</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="analogia-canvas" style="width:100%;overflow:hidden;border-radius:var(--r-md);background:linear-gradient(135deg,#F4F5FC 0%,#EEEDFE 100%);padding:1rem 0">
+          <svg id="svg-analogia" viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">
+          </svg>
+        </div>
+
+        <p id="analogia-note" class="note" style="margin-top:8px;display:none">
+          Prima mensual estimada. Consultá con Prospei para obtener la cotización exacta de Zurich.
+        </p>
+      </div>
+    </div>
+  </div>
+
   </div>
 
 </main>
 
-<footer class="site-footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de acción</footer>
+<footer class="site-footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de protección familiar</footer>
 
 <script>
 var C = { viv:'#2A7F8F', mant:'#5B2ECC', edu:'#D4516A', ev:'#E8A23A' };
@@ -490,6 +537,9 @@ function addHijo() {
     '<div class="row">'+
       '<div class="field"><label>Fecha nac.</label><input type="date" id="'+pre+'Fecha" onchange="calcEdadHijo(\''+pre+'\')" /></div>'+
       '<div class="field"><label>Edad</label><input type="number" id="'+pre+'Edad" placeholder="años" min="0" max="30" oninput="syncEdu()" /></div>'+
+      '<div class="field" style="min-width:90px;max-width:110px"><label>Sexo</label>'+
+        '<select id="'+pre+'Sexo"><option value="M">Masculino</option><option value="F">Femenino</option></select>'+
+      '</div>'+
     '</div>';
   document.getElementById('hijos-grid').appendChild(div);
   syncEdu();
@@ -585,8 +635,8 @@ function syncEdu() {
         '<div class="etapa-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap">'+
           '<input type="checkbox" class="etapa-chk" '+(et.chk?'checked':'')+' style="flex-shrink:0;width:15px;height:15px;accent-color:var(--violet)"/>'+
           '<input type="text" class="etapa-label" value="'+et.label+'" style="font-size:13px;width:110px;padding:5px 8px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--white);color:var(--muted);font-family:DM Sans,sans-serif"/>'+
-          '<div class="field" style="min-width:70px;max-width:90px"><label>Años que quedan</label><input type="number" class="etapa-dur" value="'+et.dur+'" min="0" max="20"/></div>'+
-          '<div class="field" style="min-width:100px;flex:1"><label>Cuota mensual</label><input type="number" class="etapa-costo" value="'+et.costo+'"/></div>'+
+          '<div class="field" style="min-width:70px;max-width:90px"><label>Años restantes</label><input type="number" class="etapa-dur" value="'+et.dur+'" min="0" max="20"/></div>'+
+          '<div class="field" style="min-width:100px;flex:1"><label>Cuota mensual estimada</label><input type="number" class="etapa-costo" value="'+et.costo+'"/></div>'+
           '<button onclick="quitarEtapa(this)" style="font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>'+
         '</div>';
     }
@@ -596,7 +646,7 @@ function syncEdu() {
         '<div style="width:30px;height:30px;border-radius:50%;background:var(--lilac);color:var(--violet);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">'+ini+'</div>'+
         '<div>'+
           '<div style="font-size:14px;font-weight:500;color:var(--ink)">'+h.nombre+'</div>'+
-          '<div style="font-size:12px;color:var(--muted)">'+h.edad+' años · las etapas se encadenan en orden</div>'+
+          '<div style="font-size:12px;color:var(--muted)">'+h.edad+' años · cada etapa sigue a la anterior sin interrupciones</div>'+
         '</div>'+
       '</div>'+
       '<div class="etapas-list">'+etapasHtml+'</div>'+
@@ -620,8 +670,8 @@ function addEtapa(btn) {
   div.innerHTML =
     '<input type="checkbox" class="etapa-chk" checked style="flex-shrink:0;width:15px;height:15px;accent-color:var(--violet)"/>'+
     '<input type="text" class="etapa-label" value="Nueva etapa" style="font-size:13px;width:110px;padding:5px 8px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--white);color:var(--muted);font-family:DM Sans,sans-serif"/>'+
-    '<div class="field" style="min-width:70px;max-width:90px"><label>Años que quedan</label><input type="number" class="etapa-dur" value="1" min="0" max="20"/></div>'+
-    '<div class="field" style="min-width:100px;flex:1"><label>Cuota mensual</label><input type="number" class="etapa-costo" value="0"/></div>'+
+    '<div class="field" style="min-width:70px;max-width:90px"><label>Años restantes</label><input type="number" class="etapa-dur" value="1" min="0" max="20"/></div>'+
+    '<div class="field" style="min-width:100px;flex:1"><label>Cuota mensual estimada</label><input type="number" class="etapa-costo" value="0"/></div>'+
     '<button onclick="quitarEtapa(this)" style="font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>';
   container.appendChild(div);
 }
@@ -844,49 +894,49 @@ hr{border:none;border-top:0.5px solid #D0D4EE;margin:10px 0;}
   <div class="hdr">
     <img src="${logoSrc}" alt="Prospei"/>
     <div class="hdr-div"></div>
-    <div><div class="hdr-title">Análisis de necesidades y plan de acción</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
+    <div><div class="hdr-title">Análisis de necesidades y plan de protección familiar</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
   </div>
 
   <div class="slabel">Familia</div>
   ${famHtml}
 
-  <div class="slabel">Datos del análisis</div>
+  <div class="slabel">Tu horizonte de protección</div>
   <div class="drow">
     <div class="dbox"><div class="dl">Moneda</div><div class="dv">${cur}</div></div>
     <div class="dbox"><div class="dl">Horizonte de análisis</div><div class="dv">${horizon} años</div></div>
     <div class="dbox" style="flex:2"></div>
   </div>
 
-  <div class="slabel">Vivienda</div>
+  <div class="slabel">El hogar de tu familia</div>
   <div class="drow">
     <div class="dbox" style="flex:1"><div class="dl">Valor de la propiedad (capital fijo)</div><div class="dv">${vivienda}</div></div>
     <div class="dbox" style="flex:2;background:transparent"></div>
   </div>
 
-  <div class="slabel">Gastos de mantenimiento</div>
+  <div class="slabel">El ritmo de vida de tu familia</div>
   <div class="drow">
     <div class="dbox"><div class="dl">Gasto mensual</div><div class="dv">${mantM}</div></div>
-    <div class="dbox"><div class="dl">Años de cobertura</div><div class="dv">${mantA} años</div></div>
+    <div class="dbox"><div class="dl">Años que tu familia necesita ese ingreso</div><div class="dv">${mantA} años</div></div>
     <div class="dbox" style="background:transparent"></div>
   </div>
 
-  <div class="slabel">Educación</div>
+  <div class="slabel">El futuro de tus hijos</div>
   <table>
-    <thead><tr><th>Etapa</th><th>Años que quedan</th><th>Cuota mensual</th></tr></thead>
+    <thead><tr><th>Etapa</th><th>Años restantes</th><th>Cuota mensual estimada</th></tr></thead>
     <tbody>${eduHtml}</tbody>
   </table>
 
-  <div class="slabel">Eventos especiales</div>
+  <div class="slabel">Los momentos que querés garantizar</div>
   ${evHtml ? '<table><thead><tr><th>Descripción</th><th>Monto</th><th>Año</th></tr></thead><tbody>'+evHtml+'</tbody></table>' : '<p style="font-size:9pt;color:#999;margin-bottom:8px">Sin eventos cargados.</p>'}
 
-  <div class="slabel">Ingresos disponibles</div>
+  <div class="slabel">Lo que aportaría tu pareja</div>
   <div class="drow">
     <div class="dbox"><div class="dl">Ingreso mensual cónyuge</div><div class="dv">${ingCon}</div></div>
     <div class="dbox"><div class="dl">Otros ingresos mensuales</div><div class="dv">${ingOt}</div></div>
     <div class="dbox" style="background:transparent"></div>
   </div>
 
-  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de acción</div>
+  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de protección familiar</div>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -896,20 +946,20 @@ hr{border:none;border-top:0.5px solid #D0D4EE;margin:10px 0;}
   <div class="hdr">
     <img src="${logoSrc}" alt="Prospei"/>
     <div class="hdr-div"></div>
-    <div><div class="hdr-title">Análisis de necesidades — gráficos</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
+    <div><div class="hdr-title">Tu análisis de protección familiar — gráficos</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
   </div>
 
-  ${imgAnual ? '<div class="chart-box"><div class="chart-title">Gastos por año — flujo anual de necesidades</div><img src="'+imgAnual+'"/><div class="chart-note">Gastos anuales por categoría (mantenimiento, educación, eventos). La vivienda no aparece aquí por ser un capital fijo.</div></div>' : ''}
+  ${imgAnual ? '<div class="chart-box"><div class="chart-title">Lo que tu familia necesita cada año</div><img src="'+imgAnual+'"/><div class="chart-note">Cuánto necesita tu familia cada año para mantener su estilo de vida.</div></div>' : ''}
 
   <hr/>
 
-  ${imgNeto ? '<div class="chart-box"><div class="chart-title">Necesidades netas por año — descontando ingresos del cónyuge</div><img src="'+imgNeto+'"/><div class="chart-note">Lo que el seguro de vida debe cubrir cada año, una vez descontados los ingresos disponibles.</div></div>' : ''}
+  ${imgNeto ? '<div class="chart-box"><div class="chart-title">Lo que el seguro debe cubrir cada año</div><img src="'+imgNeto+'"/><div class="chart-note">Lo que el seguro debe garantizar cada año para que nada cambie en tu familia.</div></div>' : ''}
 
   <hr/>
 
-  ${imgNec ? '<div class="chart-box"><div class="chart-title">Necesidades acumuladas — capital requerido por año de inicio</div><img src="'+imgNec+'"/><div class="chart-note">Cada barra muestra el capital necesario si el evento ocurriese ese año. La línea punteada es la necesidad neta descontando ingresos.</div></div>' : ''}
+  ${imgNec ? '<div class="chart-box"><div class="chart-title">El capital que tu familia necesitaría según cuándo ocurra</div><img src="'+imgNec+'"/><div class="chart-note">El capital que necesitaría tu familia según cuándo ocurra. Cada número representa la protección que hoy podés dejar asegurada.</div></div>' : ''}
 
-  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de acción</div>
+  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de protección familiar</div>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -919,22 +969,22 @@ hr{border:none;border-top:0.5px solid #D0D4EE;margin:10px 0;}
   <div class="hdr">
     <img src="${logoSrc}" alt="Prospei"/>
     <div class="hdr-div"></div>
-    <div><div class="hdr-title">Plan de protección</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
+    <div><div class="hdr-title">El plan que protege a tu familia</div><div class="hdr-sub">Prospei Consultores Financieros</div></div>
   </div>
 
   <div class="slabel">Cobertura propuesta</div>
   <div class="drow">
     <div class="dbox"><div class="dl">Cobertura Vida Entera</div><div class="dv">${cobVida}</div></div>
-    <div class="dbox"><div class="dl">Renta Familiar — cuota anual</div><div class="dv">${rentaCuota}</div></div>
+    <div class="dbox"><div class="dl">Renta Familiar — cuota anual garantizada</div><div class="dv">${rentaCuota}</div></div>
     <div class="dbox"><div class="dl">Renta Familiar — años</div><div class="dv">${rentaAnios} años</div></div>
   </div>
 
-  <div class="slabel">Resumen del plan</div>
+  <div class="slabel">Lo que necesita tu familia</div>
   <div class="mgrid">${metricsHtml}</div>
 
-  ${imgPlan ? '<div class="chart-box"><div class="chart-title">Necesidades vs. cobertura acumulada</div><img src="'+imgPlan+'"/><div class="chart-note">Rojo: necesidades acumuladas totales. Verde apilado (base a tope): Vida Entera + Renta Familiar + Ingresos del cónyuge. Línea punteada: necesidad neta real.</div></div>' : ''}
+  ${imgPlan ? '<div class="chart-box"><div class="chart-title">Tu plan cubre las necesidades de tu familia</div><img src="'+imgPlan+'"/><div class="chart-note">Rojo: lo que necesita tu familia. Verde: lo que garantiza tu plan. Cuando el verde iguala al rojo, tu familia está completamente protegida.</div></div>' : ''}
 
-  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de acción</div>
+  <div class="footer">Prospei Consultores Financieros &nbsp;·&nbsp; Análisis de necesidades y plan de protección familiar</div>
 </div>
 
 </body></html>`);
@@ -1042,7 +1092,7 @@ function calcular() {
 
   // Summary
   document.getElementById('sum-grid').innerHTML =
-    mkMetric('Capital necesario (año 1)', fmtF(vivMonto+necMant[0]+necEdu[0]+necEv[0]), 'máxima cobertura', null, true)+
+    mkMetric('Capital necesario (año 1)', fmtF(vivMonto+necMant[0]+necEdu[0]+necEv[0]), 'capital que necesita tu familia hoy', null, true)+
     mkMetric('Vivienda',      fmt(vivMonto), '', C.viv,  false)+
     mkMetric('Mantenimiento', fmt(totMant),  '', C.mant, false)+
     mkMetric('Educación',     fmt(totEdu),   '', C.edu,  false)+
@@ -1200,13 +1250,13 @@ function calcPlan() {
   var diferencia = cobAnio1 - maxBrecha;
 
   document.getElementById('sum-plan').innerHTML =
-    mkMetric('Necesidad neta año 1', fmtF(maxBrecha), 'a cubrir con seguro', '#C0392B', false) +
-    mkMetric('Cobertura total año 1', fmtF(cobAnio1), 'ingresos + vida + renta', '#1A7A4A', false) +
+    mkMetric('Necesidad neta año 1', fmtF(maxBrecha), 'capital que necesita tu familia hoy', '#C0392B', false) +
+    mkMetric('Cobertura total año 1', fmtF(cobAnio1), 'tu plan garantiza este capital', '#1A7A4A', false) +
     mkMetric(diferencia >= 0 ? 'Excedente' : 'Déficit',
              fmtF(Math.abs(diferencia)),
-             diferencia >= 0 ? 'cobertura suficiente ✓' : 'cobertura insuficiente ✗',
+             diferencia >= 0 ? '¡tu familia está protegida! ✓' : 'ajustá la cobertura ✗',
              diferencia >= 0 ? '#1A7A4A' : '#C0392B', true) +
-    mkMetric('Vida Entera', fmtF(cobVida), 'capital fijo permanente', '#1A7A4A', false) +
+    mkMetric('Vida Entera', fmtF(cobVida), 'para siempre, sin importar cuándo', '#1A7A4A', false) +
     mkMetric('Renta Familiar', fmtF(rentaCuota * rentaAnios), rentaAnios + ' años', '#27AE60', false);
 
   document.getElementById('legend-plan').innerHTML =
@@ -1290,6 +1340,8 @@ function calcPlan() {
   buildPlanTable2(yLabels, brechaAcum, vidaArr, rentaAcum, ingAcum, cobTotalFull, horizon);
 
   document.getElementById('results-plan').classList.remove('hidden');
+  document.getElementById('sec-analogia').classList.remove('hidden');
+  dibujarAnalogia();
   document.getElementById('results-plan').scrollIntoView({behavior:'smooth'});
 }
 
@@ -1426,6 +1478,211 @@ function buildTable2(yLabels, vivMonto, necMant, necEdu, necEv, horizon) {
   for (var i=0;i<horizon;i++) h+='<td>'+fmtN(totCols[i])+'</td>';
   h+='</tr></tbody>';
   t.innerHTML=h;
+}
+
+
+function dibujarAnalogia() {
+  var svg = document.getElementById('svg-analogia');
+  if (!svg) return;
+
+  var prima = parseFloat(document.getElementById('primaMensual').value) || 0;
+  var sym   = document.getElementById('primaMoneda') ? 
+              (document.getElementById('primaMoneda').value === 'EUR' ? '€' : '$') : '$';
+  var primaStr = prima > 0 ? sym + prima.toLocaleString('es-AR') + '/mes' : '$ ___ /mes';
+
+  // Get need total for big rock label
+  var needStr = gCalc ? fmtF(gCalc.vivMonto + (gCalc.necMant[0]||0) + (gCalc.necEdu[0]||0) + (gCalc.necEv[0]||0)) : '';
+
+  // Titan/pareja names
+  var titName = document.getElementById('titNombre') ? (document.getElementById('titNombre').value.split(' ')[0] || 'Vos') : 'Vos';
+  var parName  = document.getElementById('parNombre') ? (document.getElementById('parNombre').value.split(' ')[0] || '') : '';
+  var titSexo  = document.getElementById('titSexo')  ? document.getElementById('titSexo').value  : 'M';
+  var parSexo  = document.getElementById('parSexo')  ? document.getElementById('parSexo').value  : 'F';
+
+  var W = 760, H = 340;
+
+  // Colors
+  var VIOLET = '#5B2ECC', TEAL = '#2A7F8F', INK = '#1A1A2E', MUTED = '#5A5A7A';
+  var RED_ROCK = '#C0392B', GREEN_ROCK = '#27AE60', ORANGE = '#E8A23A';
+  var BG_L = '#FEF0F0', BG_R = '#F0FEF4';
+
+  // ── Helper: person silhouette (gender-aware) ──
+  // sexo: 'M' = male (pants), 'F' = female (skirt/dress)
+  function drawPerson(cx, cy, color, sexo, armsUp) {
+    var g = '';
+    // head
+    g += '<circle cx="'+cx+'" cy="'+(cy-42)+'" r="12" fill="'+color+'"/>';
+    if (sexo === 'F') {
+      // hair bun
+      g += '<ellipse cx="'+(cx+4)+'" cy="'+(cy-54)+'" rx="6" ry="5" fill="'+color+'" opacity="0.8"/>';
+      g += '<circle cx="'+(cx+4)+'" cy="'+(cy-54)+'" r="4" fill="'+color+'"/>';
+    }
+    if (armsUp) {
+      // torso
+      if (sexo === 'F') {
+        // dress/top - triangle shape
+        g += '<polygon points="'+(cx-10)+','+(cy-30)+' '+(cx+10)+','+(cy-30)+' '+(cx+14)+','+(cy)+' '+(cx-14)+','+(cy)+'" fill="'+color+'"/>';
+      } else {
+        g += '<rect x="'+(cx-9)+'" y="'+(cy-30)+'" width="18" height="28" rx="3" fill="'+color+'"/>';
+      }
+      // arms UP
+      g += '<line x1="'+(cx-9)+'" y1="'+(cy-24)+'" x2="'+(cx-38)+'" y2="'+(cy-58)+'" stroke="'+color+'" stroke-width="8" stroke-linecap="round"/>';
+      g += '<line x1="'+(cx+9)+'" y1="'+(cy-24)+'" x2="'+(cx+22)+'" y2="'+(cy-55)+'" stroke="'+color+'" stroke-width="8" stroke-linecap="round"/>';
+    } else {
+      // torso
+      if (sexo === 'F') {
+        g += '<polygon points="'+(cx-10)+','+(cy-30)+' '+(cx+10)+','+(cy-30)+' '+(cx+14)+','+(cy)+' '+(cx-14)+','+(cy)+'" fill="'+color+'"/>';
+      } else {
+        g += '<rect x="'+(cx-9)+'" y="'+(cy-30)+'" width="18" height="28" rx="3" fill="'+color+'"/>';
+      }
+      // arms relaxed
+      g += '<line x1="'+(cx-9)+'" y1="'+(cy-22)+'" x2="'+(cx-22)+'" y2="'+(cy-8)+'" stroke="'+color+'" stroke-width="8" stroke-linecap="round"/>';
+      g += '<line x1="'+(cx+9)+'" y1="'+(cy-22)+'" x2="'+(cx+26)+'" y2="'+(cy-36)+'" stroke="'+color+'" stroke-width="8" stroke-linecap="round"/>';
+    }
+    if (sexo === 'F') {
+      // skirt triangle below waist
+      g += '<polygon points="'+(cx-16)+','+(cy)+' '+(cx+16)+','+(cy)+' '+(cx+20)+','+(cy+22)+' '+(cx-20)+','+(cy+22)+'" fill="'+color+'" opacity="0.85"/>';
+      // legs showing below skirt
+      g += '<rect x="'+(cx-12)+'" y="'+(cy+20)+'" width="8" height="16" rx="3" fill="'+color+'"/>';
+      g += '<rect x="'+(cx+4)+'" y="'+(cy+20)+'" width="8" height="16" rx="3" fill="'+color+'"/>';
+    } else {
+      // pants legs
+      g += '<rect x="'+(cx-10)+'" y="'+(cy)+'" width="9" height="22" rx="3" fill="'+color+'"/>';
+      g += '<rect x="'+(cx+1)+'" y="'+(cy)+'" width="9" height="22" rx="3" fill="'+color+'"/>';
+    }
+    return g;
+  }
+
+  // ── Helper: rounded rect ──
+  function rrect(x,y,w,h,r,fill,stroke,sw) {
+    return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+r+'" fill="'+fill+'"'+(stroke?' stroke="'+stroke+'" stroke-width="'+(sw||1)+'"':'')+'/>';
+  }
+
+  // ── Helper: boulder (irregular polygon) ──
+  function boulder(cx, cy, rx, ry, fill, stroke) {
+    // approximate ellipse with slight irregularity
+    var pts = [];
+    var angles = [0,35,70,105,140,175,210,245,280,315,350];
+    angles.forEach(function(a, i) {
+      var rad = a * Math.PI / 180;
+      var jitter = (i % 3 === 0) ? 0.88 : (i % 3 === 1) ? 0.96 : 1.04;
+      pts.push((cx + Math.cos(rad)*rx*jitter).toFixed(1) + ',' + (cy + Math.sin(rad)*ry*jitter).toFixed(1));
+    });
+    return '<polygon points="'+pts.join(' ')+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2" stroke-linejoin="round"/>';
+  }
+
+  // ── Helper: text with background ──
+  function textBadge(x, y, txt, bg, tc, fontSize, bold) {
+    var fw = bold ? 'bold' : 'normal';
+    return '<text x="'+x+'" y="'+y+'" text-anchor="middle" font-family="Arial" font-size="'+(fontSize||10)+'" font-weight="'+fw+'" fill="'+tc+'">'+txt+'</text>';
+  }
+
+  var out = '';
+
+  // ── DIVIDER LINE ──
+  out += '<line x1="'+W/2+'" y1="20" x2="'+W/2+'" y2="'+H+'" stroke="#C5CEF5" stroke-width="1.5" stroke-dasharray="6,4"/>';
+
+  // ── PANEL BACKGROUNDS ──
+  out += rrect(0, 0, W/2, H, 0, BG_L, '', 0);
+  out += rrect(W/2, 0, W/2, H, 0, BG_R, '', 0);
+
+  // ── PANEL TITLES ──
+  out += '<text x="'+(W/4)+'" y="28" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold" fill="'+RED_ROCK+'">HOY</text>';
+  out += '<text x="'+(W*3/4)+'" y="28" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold" fill="'+GREEN_ROCK+'">CON TU PLAN PROSPEI · ZURICH</text>';
+
+  // ════ LADO IZQUIERDO: Hoy ════
+  // Big boulder on top
+  var bigRock_cx = W/4, bigRock_cy = 115;
+  var bigRock_rx = 105, bigRock_ry = 65;
+  out += boulder(bigRock_cx, bigRock_cy, bigRock_rx, bigRock_ry, '#C0392B', '#922B21');
+  // Rock texture lines
+  out += '<line x1="'+(bigRock_cx-50)+'" y1="'+(bigRock_cy-20)+'" x2="'+(bigRock_cx-20)+'" y2="'+(bigRock_cy-35)+'" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-linecap="round"/>';
+  out += '<line x1="'+(bigRock_cx-30)+'" y1="'+(bigRock_cy+10)+'" x2="'+(bigRock_cx+30)+'" y2="'+(bigRock_cy)+'" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>';
+  // Rock labels
+  out += '<text x="'+bigRock_cx+'" y="'+(bigRock_cy-18)+'" text-anchor="middle" font-family="Arial" font-size="9.5" font-weight="bold" fill="white">Vivienda · Educación</text>';
+  out += '<text x="'+bigRock_cx+'" y="'+(bigRock_cy-4)+'" text-anchor="middle" font-family="Arial" font-size="9.5" font-weight="bold" fill="white">Mantenimiento · Eventos</text>';
+  if (needStr) {
+    out += '<text x="'+bigRock_cx+'" y="'+(bigRock_cy+14)+'" text-anchor="middle" font-family="Arial" font-size="11" font-weight="bold" fill="white">'+needStr+'</text>';
+  }
+
+  // Arms up holding rock
+  // Titular left, pareja right
+  var titX_l = bigRock_cx - 55, parX_l = bigRock_cx + 55;
+  var personY_l = 220;
+
+  // LEFT: Titular arms up
+  out += drawPerson(titX_l, personY_l, VIOLET, titSexo, true);
+  out += '<text x="'+titX_l+'" y="'+(personY_l+28)+'" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold" fill="'+VIOLET+'">'+titName+'</text>';
+
+  if (parName) {
+    // LEFT: Pareja arms up
+    out += drawPerson(parX_l, personY_l, TEAL, parSexo, true);
+    out += '<text x="'+parX_l+'" y="'+(personY_l+28)+'" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold" fill="'+TEAL+'">'+parName+'</text>';
+  }
+
+  // Strain lines
+  out += '<text x="'+(titX_l-25)+'" y="'+(personY_l-55)+'" font-family="Arial" font-size="14" fill="'+RED_ROCK+'" opacity="0.7">😰</text>';
+
+  // Caption below
+  out += '<text x="'+(W/4)+'" y="'+(H-20)+'" text-anchor="middle" font-family="Arial" font-size="9" fill="'+MUTED+'">Vos y tu familia cargan solos</text>';
+  out += '<text x="'+(W/4)+'" y="'+(H-8)+'" text-anchor="middle" font-family="Arial" font-size="9" fill="'+MUTED+'">con todo el peso</text>';
+
+  // ARROW in the middle
+  var arrowX = W/2;
+  var arrowY = H/2 + 10;
+  out += '<polygon points="'+(arrowX-18)+','+(arrowY+12)+' '+(arrowX+18)+','+(arrowY+12)+' '+arrowX+','+(arrowY-12)+'" fill="'+VIOLET+'" opacity="0.7" transform="rotate(90,'+arrowX+','+arrowY+')"/>';
+  out += '<text x="'+arrowX+'" y="'+(arrowY+36)+'" text-anchor="middle" font-family="Arial" font-size="9" font-weight="bold" fill="'+VIOLET+'">CAMBIO</text>';
+  out += '<text x="'+arrowX+'" y="'+(arrowY+48)+'" text-anchor="middle" font-family="Arial" font-size="9" font-weight="bold" fill="'+VIOLET+'">DE ROL</text>';
+
+  // ════ LADO DERECHO: Con el plan ════
+  var RX = W/2; // right panel x offset
+  var cx_r = RX + W/4;
+
+  // Zurich big figure holding the big rock
+  // Big company shield/logo area
+  var zurichX = cx_r + 30, zurichY = 145;
+  // Big body (Zurich)
+  out += '<ellipse cx="'+zurichX+'" cy="'+(zurichY+10)+'" rx="38" ry="50" fill="'+TEAL+'" opacity="0.15"/>';
+  out += '<rect x="'+(zurichX-22)+'" y="'+(zurichY-30)+'" width="44" height="55" rx="8" fill="'+TEAL+'"/>';
+  // shield
+  out += '<polygon points="'+zurichX+','+(zurichY-50)+' '+(zurichX-18)+','+(zurichY-36)+' '+(zurichX-18)+','+(zurichY-20)+' '+zurichX+','+(zurichY-10)+' '+(zurichX+18)+','+(zurichY-20)+' '+(zurichX+18)+','+(zurichY-36)+'" fill="white" opacity="0.9"/>';
+  out += '<text x="'+zurichX+'" y="'+(zurichY-28)+'" text-anchor="middle" font-family="Arial" font-size="8" font-weight="bold" fill="'+TEAL+'">Z</text>';
+  // arms up holding big rock
+  out += '<line x1="'+(zurichX-22)+'" y1="'+(zurichY-18)+'" x2="'+(zurichX-55)+'" y2="'+(zurichY-60)+'" stroke="'+TEAL+'" stroke-width="9" stroke-linecap="round"/>';
+  out += '<line x1="'+(zurichX+22)+'" y1="'+(zurichY-18)+'" x2="'+(zurichX+55)+'" y2="'+(zurichY-60)+'" stroke="'+TEAL+'" stroke-width="9" stroke-linecap="round"/>';
+  // legs
+  out += '<rect x="'+(zurichX-18)+'" y="'+(zurichY+25)+'" width="14" height="25" rx="4" fill="'+TEAL+'"/>';
+  out += '<rect x="'+(zurichX+4)+'" y="'+(zurichY+25)+'" width="14" height="25" rx="4" fill="'+TEAL+'"/>';
+  out += '<text x="'+zurichX+'" y="'+(zurichY+65)+'" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold" fill="'+TEAL+'">ZURICH</text>';
+  out += '<text x="'+zurichX+'" y="'+(zurichY+78)+'" text-anchor="middle" font-family="Arial" font-size="8" fill="'+MUTED+'">+160 años</text>';
+  // happy face
+  out += '<text x="'+(zurichX+35)+'" y="'+(zurichY-28)+'" font-family="Arial" font-size="14" fill="'+GREEN_ROCK+'" opacity="0.8">💪</text>';
+
+  // Big rock on Zurich arms (same size but greener/lighter - their burden)
+  var br2_cx = zurichX, br2_cy = zurichY - 78;
+  out += boulder(br2_cx, br2_cy, 72, 44, 'rgba(192,57,43,0.55)', '#922B21');
+  out += '<text x="'+br2_cx+'" y="'+(br2_cy-8)+'" text-anchor="middle" font-family="Arial" font-size="8" font-weight="bold" fill="white">Todo el peso</text>';
+  out += '<text x="'+br2_cx+'" y="'+(br2_cy+7)+'" text-anchor="middle" font-family="Arial" font-size="8" font-weight="bold" fill="white">de tu familia</text>';
+
+  // RIGHT: Titular relaxed with small rock
+  var titX_r = RX + 60, titY_r = 220;
+  out += drawPerson(titX_r, titY_r, VIOLET, titSexo, false);
+  out += '<text x="'+titX_r+'" y="'+(titY_r+28)+'" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold" fill="'+VIOLET+'">'+titName+'</text>';
+  // happy face
+  out += '<text x="'+(titX_r-30)+'" y="'+(titY_r-45)+'" font-family="Arial" font-size="14">😊</text>';
+
+  // Small rock (prima)
+  var sr_cx = titX_r + 38, sr_cy = titY_r - 52;
+  out += boulder(sr_cx, sr_cy, 28, 18, GREEN_ROCK, '#1A5E33');
+  out += '<text x="'+sr_cx+'" y="'+(sr_cy+4)+'" text-anchor="middle" font-family="Arial" font-size="8" font-weight="bold" fill="white">'+primaStr+'</text>';
+
+  // Caption below right
+  out += '<text x="'+cx_r+'" y="'+(H-20)+'" text-anchor="middle" font-family="Arial" font-size="9" fill="'+MUTED+'">Zurich carga con todo.</text>';
+  out += '<text x="'+cx_r+'" y="'+(H-8)+'" text-anchor="middle" font-family="Arial" font-size="9" fill="'+MUTED+'">Vos solo pagás la cuota mensual.</text>';
+
+  svg.innerHTML = out;
+
+  document.getElementById('analogia-note').style.display = prima > 0 ? 'block' : 'none';
 }
 
 // Init
