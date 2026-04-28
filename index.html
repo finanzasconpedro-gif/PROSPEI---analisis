@@ -726,13 +726,22 @@ function exportPDF() {
   // Capture charts as images at high resolution
   var imgAnual = document.getElementById('chartAnual') ? document.getElementById('chartAnual').toDataURL('image/png', 1.0) : null;
   
-  // Capture SVG analogy
+  // Make sure analogy is drawn first
+  if (typeof dibujarAnalogia === 'function') { dibujarAnalogia(); }
+  
+  // Capture SVG analogy as inline SVG string (works cross-browser)
   var svgAnalogia = '';
   var svgEl = document.getElementById('svg-analogia');
-  if (svgEl && svgEl.innerHTML) {
-    var svgOuter = new XMLSerializer().serializeToString(svgEl);
-    svgAnalogia = svgOuter;
+  if (svgEl) {
+    // Set explicit dimensions on viewBox SVG for print
+    var svgClone = svgEl.cloneNode(true);
+    svgClone.setAttribute('width', '100%');
+    svgClone.setAttribute('height', 'auto');
+    svgClone.style.display = 'block';
+    svgClone.style.maxWidth = '100%';
+    svgAnalogia = svgClone.outerHTML || new XMLSerializer().serializeToString(svgClone);
   }
+  var imgAnalogia = null; // not used but kept for compatibility
   var imgNeto  = document.getElementById('chartNeto')  ? document.getElementById('chartNeto').toDataURL('image/png', 1.0)  : null;
   var imgNec   = document.getElementById('chartNec')   ? document.getElementById('chartNec').toDataURL('image/png', 1.0)   : null;
   var imgPlan  = document.getElementById('chartPlan')  ? document.getElementById('chartPlan').toDataURL('image/png', 1.0)  : null;
@@ -1024,8 +1033,8 @@ hr{border:none;border-top:0.5px solid #D0D4EE;margin:10px 0;}
     responsabilidad en manos de Zurich — más de 160 años protegiendo proyectos de familia — 
     y a cambio, solo te ocupás de una pequeña cuota mensual.
   </p>
-  <div id="analogia-print-wrap" style="width:100%;border-radius:8px;overflow:hidden;background:linear-gradient(135deg,#FFF5F5 0%,#F5FFF7 100%);padding:8px 0">
-    ${svgAnalogia ? svgAnalogia.replace('<svg ', '<svg style="width:100%;height:auto;display:block" ') : '<p style=\'text-align:center;color:#999;padding:40px\'>Calculá el plan de protección para ver la ilustración</p>'}
+  <div style="width:100%;border-radius:8px;overflow:hidden;background:linear-gradient(135deg,#FFF5F5 0%,#F5FFF7 100%);padding:4px 0">
+    ${svgAnalogia || '<p style=\'text-align:center;color:#999;padding:40px\'>Calculá el plan de protección para ver la ilustración</p>'}
   </div>
   <p style="text-align:center;font-size:10pt;color:#1A1A2E;margin-top:16px">
     ¿Estás listo para dar este paso? <strong>Prospei Consultores Financieros</strong> está acá para acompañarte.
@@ -1296,7 +1305,7 @@ function calcPlan() {
   var diferencia = cobAnio1 - maxBrecha;
 
   document.getElementById('sum-plan').innerHTML =
-    mkMetric('Necesidad neta año 1', fmtF(maxBrecha), 'capital que necesita tu familia hoy', '#C0392B', false) +
+    mkMetric('Necesidades totales año 1', fmtF(necTotal[0]||0), 'total de necesidades a cubrir', '#C0392B', false) +
     mkMetric('Cobertura total año 1', fmtF(cobAnio1), 'tu plan garantiza este capital', '#1A7A4A', false) +
     mkMetric(diferencia >= 0 ? 'Excedente' : 'Déficit',
              fmtF(Math.abs(diferencia)),
