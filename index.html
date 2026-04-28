@@ -467,7 +467,7 @@
         </div>
 
         <p id="analogia-note" class="note" style="margin-top:8px;display:none">
-          Prima mensual estimada. Consultá con Prospei para obtener la cotización exacta de Zurich.
+          ¿Estás listo para dar este paso? Prospei Consultores Financieros está acá para acompañarte.
         </p>
       </div>
     </div>
@@ -1503,7 +1503,7 @@ function dibujarAnalogia() {
 
   // ── PANEL TITLES ──
   out += '<text x="'+(W/4)+'" y="28" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold" fill="'+RED_ROCK+'">HOY</text>';
-  out += '<text x="'+(W*3/4)+'" y="28" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold" fill="'+GREEN_ROCK+'">CON TU PLAN PROSPEI · ZURICH</text>';
+  out += '<text x="'+(W*3/4)+'" y="28" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold" fill="'+GREEN_ROCK+'">CON TU PLAN DE PROTECCIÓN A MEDIDA</text>';
 
   // ════ LADO IZQUIERDO: Hoy ════
   // Big boulder on top
@@ -1538,7 +1538,7 @@ function dibujarAnalogia() {
   // Strain lines
   out += '<text x="'+(titX_l-25)+'" y="'+(personY_l-55)+'" font-family="Arial" font-size="14" fill="'+RED_ROCK+'" opacity="0.7">😰</text>';
 
-  // Draw kids standing normally (arms down) between adults
+  // Draw kids standing normally (arms down, SVG y=0 is TOP, increases DOWN)
   var kidColors = ['#8E44AD','#2980B9','#E67E22','#27AE60'];
   var numKids = hijosAnalogia ? hijosAnalogia.length : 0;
   var kidXs = [];
@@ -1548,29 +1548,36 @@ function dibujarAnalogia() {
   else if (numKids >= 4)  kidXs = [W/4-50, W/4-17, W/4+17, W/4+50];
   for (var ki=0; ki<Math.min(numKids,4); ki++) {
     var kx = kidXs[ki];
-    var ky = personY_l;
+    var ky = personY_l;   // feet level (y increases DOWN in SVG)
     var ks = 0.72;
     var kc = kidColors[ki % kidColors.length];
     var kname = hijosAnalogia[ki].nombre;
     var ksexo = hijosAnalogia[ki].sexo;
-    // kid body
-    out += '<circle cx="'+kx+'" cy="'+(ky+38*ks)+'" r="'+(10*ks)+'" fill="'+kc+'"/>';
+    // In SVG: ky = feet, ky - N = up (toward head)
+    // head: above feet = ky - 38*ks
+    out += '<circle cx="'+kx+'" cy="'+(ky-38*ks)+'" r="'+(10*ks)+'" fill="'+kc+'"/>';
     if (ksexo==='F') {
-      out += '<circle cx="'+(kx+3*ks)+'" cy="'+(ky+49*ks)+'" r="'+(6*ks)+'" fill="'+kc+'"/>';
-      out += '<polygon points="'+(kx-9*ks)+','+(ky+26*ks)+' '+(kx+9*ks)+','+(ky+26*ks)+' '+(kx+11*ks)+','+ky+' '+(kx-11*ks)+','+ky+'" fill="'+kc+'"/>';
-      out += '<polygon points="'+(kx-13*ks)+','+ky+' '+(kx+13*ks)+','+ky+' '+(kx+16*ks)+','+(ky-18*ks)+' '+(kx-16*ks)+','+(ky-18*ks)+'" fill="'+kc+'"/>';
-      out += '<rect x="'+(kx-9*ks)+'" y="'+(ky-28*ks)+'" width="'+(6*ks)+'" height="'+(12*ks)+'" rx="'+(2*ks)+'" fill="'+kc+'"/>';
-      out += '<rect x="'+(kx+3*ks)+'" y="'+(ky-28*ks)+'" width="'+(6*ks)+'" height="'+(12*ks)+'" rx="'+(2*ks)+'" fill="'+kc+'"/>';
+      // hair bun above head
+      out += '<circle cx="'+(kx+3*ks)+'" cy="'+(ky-49*ks)+'" r="'+(5*ks)+'" fill="'+kc+'"/>';
+      // torso (dress): from ky-26 up to ky (feet area covered by skirt)
+      out += '<polygon points="'+(kx-9*ks)+','+(ky-26*ks)+' '+(kx+9*ks)+','+(ky-26*ks)+' '+(kx+11*ks)+','+ky+' '+(kx-11*ks)+','+ky+'" fill="'+kc+'"/>';
+      // skirt below torso
+      out += '<polygon points="'+(kx-13*ks)+','+ky+' '+(kx+13*ks)+','+ky+' '+(kx+16*ks)+','+(ky+18*ks)+' '+(kx-16*ks)+','+(ky+18*ks)+'" fill="'+kc+'"/>';
+      // legs below skirt
+      out += '<rect x="'+(kx-9*ks)+'" y="'+ky+'" width="'+(6*ks)+'" height="'+(14*ks)+'" rx="'+(2*ks)+'" fill="'+kc+'"/>';
+      out += '<rect x="'+(kx+3*ks)+'" y="'+ky+'" width="'+(6*ks)+'" height="'+(14*ks)+'" rx="'+(2*ks)+'" fill="'+kc+'"/>';
     } else {
-      out += '<rect x="'+(kx-8*ks)+'" y="'+ky+'" width="'+(16*ks)+'" height="'+(26*ks)+'" rx="'+(3*ks)+'" fill="'+kc+'"/>';
-      out += '<rect x="'+(kx-8*ks)+'" y="'+(ky-18*ks)+'" width="'+(7*ks)+'" height="'+(18*ks)+'" rx="'+(3*ks)+'" fill="'+kc+'"/>';
-      out += '<rect x="'+(kx+1*ks)+'" y="'+(ky-18*ks)+'" width="'+(7*ks)+'" height="'+(18*ks)+'" rx="'+(3*ks)+'" fill="'+kc+'"/>';
+      // torso
+      out += '<rect x="'+(kx-8*ks)+'" y="'+(ky-26*ks)+'" width="'+(16*ks)+'" height="'+(26*ks)+'" rx="'+(3*ks)+'" fill="'+kc+'"/>';
+      // pants
+      out += '<rect x="'+(kx-8*ks)+'" y="'+ky+'" width="'+(7*ks)+'" height="'+(16*ks)+'" rx="'+(3*ks)+'" fill="'+kc+'"/>';
+      out += '<rect x="'+(kx+1*ks)+'" y="'+ky+'" width="'+(7*ks)+'" height="'+(16*ks)+'" rx="'+(3*ks)+'" fill="'+kc+'"/>';
     }
-    // arms down relaxed
-    out += '<line x1="'+(kx-8*ks)+'" y1="'+(ky+20*ks)+'" x2="'+(kx-16*ks)+'" y2="'+(ky+6*ks)+'" stroke="'+kc+'" stroke-width="'+(6*ks)+'" stroke-linecap="round"/>';
-    out += '<line x1="'+(kx+8*ks)+'" y1="'+(ky+20*ks)+'" x2="'+(kx+16*ks)+'" y2="'+(ky+6*ks)+'" stroke="'+kc+'" stroke-width="'+(6*ks)+'" stroke-linecap="round"/>';
-    // name
-    out += '<text x="'+kx+'" y="'+(ky-36*ks)+'" text-anchor="middle" font-family="Arial" font-size="'+(7*ks)+'" font-weight="bold" fill="'+kc+'">'+kname+'</text>';
+    // arms relaxed down (in SVG, "down" = positive y)
+    out += '<line x1="'+(kx-8*ks)+'" y1="'+(ky-20*ks)+'" x2="'+(kx-16*ks)+'" y2="'+(ky-6*ks)+'" stroke="'+kc+'" stroke-width="'+(6*ks)+'" stroke-linecap="round"/>';
+    out += '<line x1="'+(kx+8*ks)+'" y1="'+(ky-20*ks)+'" x2="'+(kx+16*ks)+'" y2="'+(ky-6*ks)+'" stroke="'+kc+'" stroke-width="'+(6*ks)+'" stroke-linecap="round"/>';
+    // name above head
+    out += '<text x="'+kx+'" y="'+(ky-52*ks)+'" text-anchor="middle" font-family="Arial" font-size="'+(7.5*ks)+'" font-weight="bold" fill="'+kc+'">'+kname+'</text>';
   }
 
   // Caption below
