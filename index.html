@@ -1119,16 +1119,10 @@ function calcular() {
   charts.nec = new Chart(ctx3, {
     type:'bar',
     data:{labels:yLabels, datasets:[
-      {label:'Vivienda',     data:vivArr,  backgroundColor:C.viv,  stack:'s', order:2},
-      {label:'Mantenimiento',data:necMant, backgroundColor:C.mant, stack:'s', order:2},
-      {label:'Educación',    data:necEdu,  backgroundColor:C.edu,  stack:'s', order:2},
-      {label:'Eventos',      data:necEv,   backgroundColor:C.ev,   stack:'s', order:2},
-      {label:'Cubierto por ingresos', data:ingAcum,
-       backgroundColor:'rgba(255,255,255,0.50)', borderColor:'rgba(255,255,255,0.8)',
-       borderWidth:1, stack:'s', order:1},
-      {label:'Necesidad neta', data:brechaAcum, type:'line',
-       borderColor:'#1A1A2E', backgroundColor:'transparent',
-       borderWidth:2.5, borderDash:[5,3], pointRadius:2, tension:0.2, order:0}
+      {label:'Vivienda',     data:vivArr,  backgroundColor:C.viv,  stack:'s'},
+      {label:'Mantenimiento',data:necMant, backgroundColor:C.mant, stack:'s'},
+      {label:'Educación',    data:necEdu,  backgroundColor:C.edu,  stack:'s'},
+      {label:'Eventos',      data:necEv,   backgroundColor:C.ev,   stack:'s'}
     ]},
     options:{responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:12,padding:14}},
