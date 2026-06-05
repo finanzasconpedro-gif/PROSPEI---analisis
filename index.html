@@ -1062,7 +1062,9 @@ function calcular() {
       scales:{x:{stacked:true,ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
               y:{stacked:true,ticks:{callback:function(v){return fmt(v);},font:{size:11}}}}}
   });
-  buildNetoTable(yLabels,netaMant,netaEdu,netaEv,brechaAnual,horizon);
+  var ingAnualArrForTbl = [];
+  for (var i=0;i<horizon;i++) ingAnualArrForTbl.push((i < mantAniosVal) ? ingAnual : 0);
+  buildNetoTable(yLabels,netaMant,netaEdu,netaEv,brechaAnual,ingAnualArrForTbl,horizon);
 
   // Chart 3: acumuladas
   charts.nec = new Chart(document.getElementById('chartNec').getContext('2d'),{
@@ -1144,7 +1146,7 @@ function calcPlan() {
   var vidaArr = [];
   for (var i = 0; i < horizon; i++) {
     vidaArr.push(cobVida);
-    cobTotalFull.push(ingAcum[i] + cobVida + rentaAcum[i]);
+    cobTotalFull.push(cobVida + rentaAcum[i]);
   }
 
   // Summary
@@ -1153,13 +1155,13 @@ function calcPlan() {
   // ingAcum[0] = ingresos del cónyuge acumulados desde año 1
   // Excedente = (cobertura + ingresos) - necesidades brutas
   // cobTotalFull[i] = ingAcum[i] + cobVida + rentaAcum[i]  (ingresos YA incluidos)
-  var necBruta   = necTotal[0] || 0;
-  var cobAnio1   = cobTotalFull[0] || 0;  // = vida + renta + ingresos año 1
-  var diferencia = cobAnio1 - necBruta;
+  var necNeta1   = brechaAcum[0] || 0;
+  var cobAnio1   = cobTotalFull[0] || 0;
+  var diferencia = cobAnio1 - necNeta1;
 
   document.getElementById('sum-plan').innerHTML =
-    mkMetric('Necesidades brutas año 1', fmtF(necBruta), 'total de necesidades a cubrir', '#C0392B', false) +
-    mkMetric('Cobertura + ingresos año 1', fmtF(cobAnio1), 'seguro + aporte del cónyuge', '#1A7A4A', false) +
+    mkMetric('Necesidad neta año 1', fmtF(necNeta1), 'necesidades menos ingresos del cónyuge', '#C0392B', false) +
+    mkMetric('Cobertura del seguro año 1', fmtF(cobAnio1), 'Vida Entera + Renta Familiar', '#1A7A4A', false) +
     mkMetric(diferencia >= 0 ? 'Excedente' : 'Déficit',
              fmtF(Math.abs(diferencia)),
              diferencia >= 0 ? '¡tu familia está protegida! ✓' : 'ajustá la cobertura ✗',
@@ -1171,7 +1173,6 @@ function calcPlan() {
     mkLeg('Necesidades acumuladas', 'rgba(180,0,0,0.75)') +
     mkLeg('Vida Entera (base)', 'rgba(26,122,74,0.90)') +
     mkLeg('Renta Familiar', 'rgba(88,214,141,0.85)') +
-    mkLeg('Ingresos cónyuge', 'rgba(39,174,96,0.85)') +
     mkLeg('Necesidad neta (línea)', '#7B241C');
 
   if (charts.plan) { charts.plan.destroy(); charts.plan = null; }
@@ -1181,8 +1182,8 @@ function calcPlan() {
     type: 'bar',
     data: { labels: yLabels, datasets: [
       // Necesidades: barra ancha de fondo (80% ancho, z-index bajo)
-      { label:'Necesidades acumuladas',
-        data: necTotal,
+      { label:'Necesidades netas acumuladas',
+        data: brechaAcum,
         backgroundColor: 'rgba(180,0,0,0.75)',
         borderColor: 'rgba(180,0,0,0.90)',
         borderWidth: 1,
@@ -1209,15 +1210,7 @@ function calcPlan() {
         order: 2,
         barPercentage: 0.72,
         categoryPercentage: 0.95 },
-      { label:'Ingresos cónyuge',
-        data: ingAcum,
-        backgroundColor: 'rgba(39,174,96,0.85)',
-        borderColor: 'rgba(39,174,96,1.0)',
-        borderWidth: 1,
-        stack: 'cob',
-        order: 2,
-        barPercentage: 0.72,
-        categoryPercentage: 0.95 },
+      /* Ingresos del cónyuge ya descontados en brechaAcum */
 
       // Línea necesidad neta
       { label:'Necesidad neta',
@@ -1285,13 +1278,12 @@ function buildPlanTable2(yLabels, brechaAcum, cobVidaPlot, cobRentaPlot, ingAcum
   for (var i=0;i<horizon;i++) h += '<th>'+yLabels[i]+'</th>';
   h += '</tr></thead><tbody>';
   var cobTotalPlot = [];
-  for (var i=0;i<horizon;i++) cobTotalPlot.push(ingAcum[i]+cobVidaPlot[i]+cobRentaPlot[i]);
+  for (var i=0;i<horizon;i++) cobTotalPlot.push(cobVidaPlot[i]+cobRentaPlot[i]);
   var rows = [
     {label:'Necesidad neta acumulada', data:brechaAcum,    cls:''},
-    {label:'Ingresos del cónyuge',     data:ingAcum,       cls:''},
     {label:'Vida Entera',              data:cobVidaPlot,   cls:''},
     {label:'Renta Familiar',           data:cobRentaPlot,  cls:''},
-    {label:'Cobertura total',          data:cobTotalPlot,  cls:' class="tot-row"'}
+    {label:'Cobertura total (seguro)', data:cobTotalPlot,  cls:' class="tot-row"'}
   ];
   for (var r=0;r<rows.length;r++){
     h += '<tr'+rows[r].cls+'><td>'+rows[r].label+'</td>';
@@ -1313,23 +1305,33 @@ function mkLeg(label, color) {
   return '<span class="legend-item"><span class="legend-sq" style="background:'+color+'"></span>'+label+'</span>';
 }
 
-function buildNetoTable(yLabels, netaMant, netaEdu, netaEv, brechaAnual, horizon) {
+function buildNetoTable(yLabels, netaMant, netaEdu, netaEv, brechaAnual, ingAnualArr, horizon) {
   var t = document.getElementById('t-neto');
   if (!t) return;
   var h = '<thead><tr><th>Concepto</th>';
   for (var i=0;i<horizon;i++) h += '<th>'+yLabels[i]+'</th>';
   h += '<th>Total</th></tr></thead><tbody>';
+  var brutaArr = [];
+  for (var i=0;i<horizon;i++) brutaArr.push(netaMant[i]+netaEdu[i]+netaEv[i]+(ingAnualArr[i]||0));
   var rows = [
-    {label:'Mantenimiento (neto)', data:netaMant},
-    {label:'Educación (neto)',     data:netaEdu},
-    {label:'Eventos (neto)',       data:netaEv},
-    {label:'Total a cubrir',       data:brechaAnual}
+    {label:'Necesidad bruta anual',       data:brutaArr,    neg:false, tot:true,  final:false},
+    {label:'   Mantenimiento', data:netaMant,    neg:false, tot:false, final:false},
+    {label:'   Educación',data:netaEdu,     neg:false, tot:false, final:false},
+    {label:'   Eventos',       data:netaEv,      neg:false, tot:false, final:false},
+    {label:'(-) Ingresos del cónyuge', data:ingAnualArr, neg:true,  tot:false, final:false},
+    {label:'Total a cubrir por seguro',    data:brechaAnual, neg:false, tot:true,  final:true}
   ];
   for (var r=0;r<rows.length;r++){
-    var tot=0;
-    h += '<tr'+(r===3?' class="tot-row"':'')+'><td>'+rows[r].label+'</td>';
-    for (var i=0;i<horizon;i++){h+='<td>'+fmtN(rows[r].data[i])+'</td>';tot+=rows[r].data[i];}
-    h += '<td>'+fmtN(tot)+'</td></tr>';
+    var row=rows[r]; var rowTot=0;
+    var cls = row.final ? ' class="tot-row"' : '';
+    var stl = row.neg ? ' style="color:var(--teal)"' : (row.tot&&!row.final ? ' style="font-weight:600"' : '');
+    h += '<tr'+cls+'><td'+stl+'>'+row.label+'</td>';
+    for (var i=0;i<horizon;i++){
+      var v = row.neg ? (row.data[i]>0 ? '('+fmtN(row.data[i])+')' : '-') : fmtN(row.data[i]);
+      h+='<td'+stl+'>'+v+'</td>'; rowTot+=row.data[i];
+    }
+    var totStr = row.neg ? (rowTot>0 ? '('+fmtN(rowTot)+')' : '-') : fmtN(rowTot);
+    h += '<td'+stl+'>'+totStr+'</td></tr>';
   }
   h += '</tbody>';
   t.innerHTML = h;
