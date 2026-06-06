@@ -366,7 +366,7 @@
         <!-- Gráfico 3 -->
         <div class="chart-heading">El capital que tu familia necesitaría según cuándo ocurra</div>
         <div class="chart-wrap" style="height:320px"><canvas id="chartNec"></canvas></div>
-        <p class="chart-note">Cada barra muestra el capital necesario si el evento ocurriese ese año: vivienda (base fija) + suma de gastos futuros desde ese año en adelante.</p>
+        <p class="chart-note">Cada barra muestra el capital neto que el seguro debe cubrir si el evento ocurriese ese año: suma de gastos futuros desde ese año, descontando los ingresos del cónyuge.</p>
         <button class="tbl-toggle" onclick="togTbl('tw2',this)">Ver tabla de datos</button>
         <div id="tw2" class="tbl-wrap hidden"><table class="data-table" id="t2"></table></div>
 
@@ -1066,25 +1066,22 @@ function calcular() {
   for (var i=0;i<horizon;i++) ingAnualArrForTbl.push((i < mantAniosVal) ? ingAnual : 0);
   buildNetoTable(yLabels,netaMant,netaEdu,netaEv,brechaAnual,ingAnualArrForTbl,horizon);
 
-  // Chart 3: acumuladas
+  // Chart 3: acumulado NETO (descontando ingresos del cónyuge)
   charts.nec = new Chart(document.getElementById('chartNec').getContext('2d'),{
     type:'bar',
     data:{labels:yLabels,datasets:[
-      {label:'Vivienda',     data:vivArr, backgroundColor:C.viv, stack:'s'},
-      {label:'Mantenimiento',data:necMant,backgroundColor:C.mant,stack:'s'},
-      {label:'Educación',    data:necEdu, backgroundColor:C.edu, stack:'s'},
-      {label:'Eventos',      data:necEv,  backgroundColor:C.ev,  stack:'s'}
+      {label:'Capital a cubrir por el seguro', data:brechaAcum, backgroundColor:C.violet||'#5B2ECC', stack:'s'}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:12,padding:14}},
                tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+fmtF(c.raw);}}}},
       scales:{x:{stacked:true,ticks:{autoSkip:true,maxRotation:45,font:{size:11}}},
               y:{stacked:true,ticks:{callback:function(v){return fmt(v);},font:{size:11}},
-                 title:{display:true,text:'Capital necesario',font:{size:11},color:'#888'}}}}
+                 title:{display:true,text:'Capital neto a cubrir',font:{size:11},color:'#888'}}}}
   });
 
   buildTable1(yLabels,dMant,dEdu,dEv,horizon);
-  buildTable2(yLabels,vivMonto,necMant,necEdu,necEv,horizon);
+  buildTable2(yLabels,brechaAcum,horizon);
 
   gCalc={horizon:horizon,dMant:dMant,dEdu:dEdu,dEv:dEv,vivMonto:vivMonto,
          necMant:necMant,necEdu:necEdu,necEv:necEv,yLabels:yLabels,
@@ -1365,27 +1362,13 @@ function buildTable1(yLabels, dMant, dEdu, dEv, horizon) {
   t.innerHTML=h;
 }
 
-function buildTable2(yLabels, vivMonto, necMant, necEdu, necEv, horizon) {
+function buildTable2(yLabels, brechaAcum, horizon) {
   var t = document.getElementById('t2');
-  var vivArr=[]; for(var i=0;i<horizon;i++) vivArr.push(vivMonto);
-  var rows = [
-    {label:'Vivienda (base fija)', cls:'color:'+C.viv,  data:vivArr},
-    {label:'Mantenimiento',        cls:'color:'+C.mant, data:necMant},
-    {label:'Educación',            cls:'color:'+C.edu,  data:necEdu},
-    {label:'Eventos',              cls:'color:'+C.ev,   data:necEv}
-  ];
   var h='<thead><tr><th>Concepto</th>';
   for (var i=0;i<horizon;i++) h+='<th>'+yLabels[i]+'</th>';
   h+='</tr></thead><tbody>';
-  var totCols=[]; for(var i=0;i<horizon;i++) totCols.push(0);
-  for (var r=0;r<rows.length;r++) {
-    var row=rows[r];
-    h+='<tr><td style="'+row.cls+'">'+row.label+'</td>';
-    for (var i=0;i<horizon;i++){h+='<td>'+fmtN(row.data[i])+'</td>';totCols[i]+=row.data[i];}
-    h+='</tr>';
-  }
-  h+='<tr class="tot-row"><td>Capital total</td>';
-  for (var i=0;i<horizon;i++) h+='<td>'+fmtN(totCols[i])+'</td>';
+  h+='<tr class="tot-row"><td>Capital neto a cubrir</td>';
+  for (var i=0;i<horizon;i++) h+='<td>'+fmtN(brechaAcum[i])+'</td>';
   h+='</tr></tbody>';
   t.innerHTML=h;
 }
